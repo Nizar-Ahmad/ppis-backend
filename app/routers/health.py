@@ -1,19 +1,17 @@
-from fastapi import FastAPI
-
-app = FastAPI(
-    title="PPIS API",
-    version="1.0.0"
-)
+from fastapi import APIRouter
 
 
-@app.get("/")
+router = APIRouter()
+
+
+@router.get("/")
 def root():
     return {
         "message": "PPIS Backend is running"
     }
 
 
-@app.get("/health")
+@router.get("/health")
 def health():
     return {
         "status": "ok"
