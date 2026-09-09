@@ -1,6 +1,16 @@
 venv/
+.venv/
+
 __pycache__/
 *.pyc
+
 .env
+
 .idea/
 .vscode/
+
+.pytest_cache/
+.mypy_cache/
+
+export_project.py
+project_dump*.txt
