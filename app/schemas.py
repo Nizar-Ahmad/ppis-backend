@@ -11,41 +11,9 @@ from pydantic import (
 )
 
 
-class UserCreate(BaseModel):
-    email: EmailStr
-
-    full_name: str = Field(
-        min_length=2,
-        max_length=150
-    )
-
-    password: str = Field(
-        min_length=8,
-        max_length=128
-    )
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-
-    password: str = Field(
-        min_length=8,
-        max_length=128
-    )
-
-
-class GoogleLoginRequest(BaseModel):
-    id_token: str = Field(
-        min_length=20
-    )
-
-
-class SetPasswordRequest(BaseModel):
-    password: str = Field(
-        min_length=8,
-        max_length=128
-    )
-
+# --------------------------------------------------
+# User
+# --------------------------------------------------
 
 class RoleResponse(BaseModel):
     id: UUID
@@ -59,6 +27,7 @@ class RoleResponse(BaseModel):
 
 class UserResponse(BaseModel):
     id: UUID
+
     email: EmailStr
     full_name: str
 
@@ -73,11 +42,6 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
 
 
 # --------------------------------------------------
@@ -155,7 +119,10 @@ class DailyInputUpdate(BaseModel):
         for field in required_fields:
             if (
                 field in self.model_fields_set
-                and getattr(self, field) is None
+                and getattr(
+                    self,
+                    field
+                ) is None
             ):
                 raise ValueError(
                     f"{field} cannot be null"
@@ -172,6 +139,7 @@ class DailyInputResponse(BaseModel):
     sleep_hours: float
     energy_level: int
     focused_work_hours: float
+
     notes: str | None
 
     created_at: datetime
@@ -234,7 +202,10 @@ class ActivityUpdate(BaseModel):
         for field in required_fields:
             if (
                 field in self.model_fields_set
-                and getattr(self, field) is None
+                and getattr(
+                    self,
+                    field
+                ) is None
             ):
                 raise ValueError(
                     f"{field} cannot be null"
@@ -285,7 +256,10 @@ class CalendarEventCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_times(self):
-        if self.end_time <= self.start_time:
+        if (
+            self.end_time
+            <= self.start_time
+        ):
             raise ValueError(
                 "end_time must be after start_time"
             )
@@ -310,7 +284,10 @@ class CalendarEventUpdate(BaseModel):
         ):
             if (
                 field in self.model_fields_set
-                and getattr(self, field) is None
+                and getattr(
+                    self,
+                    field
+                ) is None
             ):
                 raise ValueError(
                     f"{field} cannot be null"
@@ -328,6 +305,7 @@ class CalendarEventResponse(BaseModel):
 
     start_time: datetime
     end_time: datetime
+
     duration_minutes: int
 
     created_at: datetime
@@ -358,9 +336,13 @@ class ScreenTimeCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_screen_time(self):
-        if self.night_minutes > self.total_minutes:
+        if (
+            self.night_minutes
+            > self.total_minutes
+        ):
             raise ValueError(
-                "night_minutes cannot be greater than total_minutes"
+                "night_minutes cannot be greater "
+                "than total_minutes"
             )
 
         return self
@@ -387,7 +369,10 @@ class ScreenTimeUpdate(BaseModel):
         ):
             if (
                 field in self.model_fields_set
-                and getattr(self, field) is None
+                and getattr(
+                    self,
+                    field
+                ) is None
             ):
                 raise ValueError(
                     f"{field} cannot be null"
@@ -421,6 +406,7 @@ class DailyScoreResponse(BaseModel):
 
     productivity_score: int
     stress_index: int
+
     sleep_score: int
     meeting_load_score: int
     distraction_score: int
@@ -443,8 +429,8 @@ class WeeklyAnalyticsResponse(BaseModel):
     average_sleep_hours: float
     average_mood: float
     average_energy_level: float
-    total_focused_work_hours: float
 
+    total_focused_work_hours: float
     total_meeting_minutes: int
     total_screen_minutes: int
 
@@ -485,12 +471,14 @@ class GoogleCalendarConnectResponse(BaseModel):
 
 class GoogleCalendarStatusResponse(BaseModel):
     connected: bool
+
     scope: str | None = None
     expires_at: datetime | None = None
 
 
 class GoogleCalendarSyncResponse(BaseModel):
     calendars_checked: int
+
     events_created: int
     events_updated: int
     events_skipped: int

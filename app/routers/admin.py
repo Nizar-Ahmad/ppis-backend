@@ -5,6 +5,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
+    Request,
     status,
 )
 from sqlalchemy import (
@@ -13,13 +14,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session
 
-from app.admin_auth import get_current_admin
+from app.admin_auth import (
+    get_current_admin,
+)
 from app.admin_schemas import (
     AdminRoleUpdate,
     AdminStatisticsResponse,
     AdminUserDataResponse,
     AdminUserResponse,
 )
+from app.audit import write_audit_log
 from app.database import get_db
 from app.models import (
     ActivityStat,
@@ -49,24 +53,37 @@ def get_user_or_404(
     user_id: UUID,
     db: Session,
 ) -> User:
-
     user = db.get(
         User,
-        user_id
+        user_id,
     )
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
             detail="User not found",
         )
 
     return user
 
 
+def scalar_count(
+    db: Session,
+    statement,
+) -> int:
+    return int(
+        db.scalar(statement)
+        or 0
+    )
+
+
 @router.get(
     "/statistics",
-    response_model=AdminStatisticsResponse,
+    response_model=(
+        AdminStatisticsResponse
+    ),
 )
 def get_statistics(
     current_admin: User = Depends(
@@ -74,146 +91,136 @@ def get_statistics(
     ),
     db: Session = Depends(get_db),
 ):
-
-    total_users = (
-        db.scalar(
-            select(
-                func.count(User.id)
-            )
-        )
-        or 0
+    total_users = scalar_count(
+        db,
+        select(
+            func.count(User.id)
+        ),
     )
 
-    normal_users = (
-        db.scalar(
-            select(
-                func.count(User.id)
-            )
-            .join(Role)
-            .where(
-                Role.name == ROLE_USER
-            )
+    normal_users = scalar_count(
+        db,
+        select(
+            func.count(User.id)
         )
-        or 0
+        .join(Role)
+        .where(
+            Role.name == ROLE_USER
+        ),
     )
 
-    admin_users = (
-        db.scalar(
-            select(
-                func.count(User.id)
-            )
-            .join(Role)
-            .where(
-                Role.name == ROLE_ADMIN
-            )
+    admin_users = scalar_count(
+        db,
+        select(
+            func.count(User.id)
         )
-        or 0
+        .join(Role)
+        .where(
+            Role.name == ROLE_ADMIN
+        ),
     )
 
-    google_users = (
-        db.scalar(
-            select(
-                func.count(User.id)
-            ).where(
-                User.google_sub.is_not(None)
-            )
-        )
-        or 0
+    google_users = scalar_count(
+        db,
+        select(
+            func.count(User.id)
+        ).where(
+            User.google_sub
+            .is_not(None)
+        ),
     )
 
-    password_users = (
-        db.scalar(
-            select(
-                func.count(User.id)
-            ).where(
-                User.password_hash.is_not(None)
-            )
-        )
-        or 0
+    password_users = scalar_count(
+        db,
+        select(
+            func.count(User.id)
+        ).where(
+            User.password_hash
+            .is_not(None)
+        ),
     )
 
     google_calendar_connections = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     GoogleCalendarConnection.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
-    total_daily_inputs = (
-        db.scalar(
-            select(
-                func.count(
-                    DailyInput.id
-                )
+    total_daily_inputs = scalar_count(
+        db,
+        select(
+            func.count(
+                DailyInput.id
             )
-        )
-        or 0
+        ),
     )
 
     total_activity_records = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     ActivityStat.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
     total_calendar_events = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     CalendarEvent.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
     total_screen_time_records = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     ScreenTimeStat.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
     total_daily_scores = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     DailyScore.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
     total_insights = (
-        db.scalar(
+        scalar_count(
+            db,
             select(
                 func.count(
                     Insight.id
                 )
-            )
+            ),
         )
-        or 0
     )
 
     average_productivity = (
         db.scalar(
             select(
                 func.avg(
-                    DailyScore.productivity_score
+                    DailyScore
+                    .productivity_score
                 )
             )
         )
@@ -224,7 +231,8 @@ def get_statistics(
         db.scalar(
             select(
                 func.avg(
-                    DailyScore.stress_index
+                    DailyScore
+                    .stress_index
                 )
             )
         )
@@ -233,46 +241,42 @@ def get_statistics(
 
     return AdminStatisticsResponse(
         total_users=total_users,
-
         normal_users=normal_users,
         admin_users=admin_users,
-
         google_users=google_users,
         password_users=password_users,
-
-        google_calendar_connections=
-            google_calendar_connections,
-
-        total_daily_inputs=
-            total_daily_inputs,
-
-        total_activity_records=
-            total_activity_records,
-
-        total_calendar_events=
-            total_calendar_events,
-
-        total_screen_time_records=
-            total_screen_time_records,
-
-        total_daily_scores=
-            total_daily_scores,
-
-        total_insights=
-            total_insights,
-
+        google_calendar_connections=(
+            google_calendar_connections
+        ),
+        total_daily_inputs=(
+            total_daily_inputs
+        ),
+        total_activity_records=(
+            total_activity_records
+        ),
+        total_calendar_events=(
+            total_calendar_events
+        ),
+        total_screen_time_records=(
+            total_screen_time_records
+        ),
+        total_daily_scores=(
+            total_daily_scores
+        ),
+        total_insights=(
+            total_insights
+        ),
         average_productivity_score=round(
             float(
                 average_productivity
             ),
-            2
+            2,
         ),
-
         average_stress_index=round(
             float(
                 average_stress
             ),
-            2
+            2,
         ),
     )
 
@@ -287,19 +291,18 @@ def get_users(
     limit: int = Query(
         default=100,
         ge=1,
-        le=500
+        le=500,
     ),
     offset: int = Query(
         default=0,
-        ge=0
+        ge=0,
     ),
     current_admin: User = Depends(
         get_current_admin
     ),
     db: Session = Depends(get_db),
 ):
-
-    users = db.scalars(
+    return db.scalars(
         select(User)
         .order_by(
             User.created_at.desc()
@@ -307,8 +310,6 @@ def get_users(
         .offset(offset)
         .limit(limit)
     ).all()
-
-    return users
 
 
 @router.get(
@@ -322,16 +323,17 @@ def get_user(
     ),
     db: Session = Depends(get_db),
 ):
-
     return get_user_or_404(
         user_id,
-        db
+        db,
     )
 
 
 @router.get(
     "/users/{user_id}/data",
-    response_model=AdminUserDataResponse,
+    response_model=(
+        AdminUserDataResponse
+    ),
 )
 def get_user_data(
     user_id: UUID,
@@ -340,10 +342,9 @@ def get_user_data(
     ),
     db: Session = Depends(get_db),
 ):
-
     user = get_user_or_404(
         user_id,
-        db
+        db,
     )
 
     daily_inputs = db.scalars(
@@ -353,7 +354,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            DailyInput.entry_date.desc()
+            DailyInput
+            .entry_date
+            .desc()
         )
     ).all()
 
@@ -364,7 +367,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            ActivityStat.entry_date.desc()
+            ActivityStat
+            .entry_date
+            .desc()
         )
     ).all()
 
@@ -375,7 +380,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            CalendarEvent.start_time.desc()
+            CalendarEvent
+            .start_time
+            .desc()
         )
     ).all()
 
@@ -386,7 +393,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            ScreenTimeStat.entry_date.desc()
+            ScreenTimeStat
+            .entry_date
+            .desc()
         )
     ).all()
 
@@ -397,7 +406,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            DailyScore.entry_date.desc()
+            DailyScore
+            .entry_date
+            .desc()
         )
     ).all()
 
@@ -408,7 +419,9 @@ def get_user_data(
             == user.id
         )
         .order_by(
-            Insight.created_at.desc()
+            Insight
+            .created_at
+            .desc()
         )
     ).all()
 
@@ -426,29 +439,18 @@ def get_user_data(
 
     return AdminUserDataResponse(
         user=user,
-
         google_calendar_connected=(
             google_calendar_connection
             is not None
         ),
-
-        daily_inputs=
-            daily_inputs,
-
-        activity=
-            activity,
-
-        calendar_events=
-            calendar_events,
-
-        screen_time=
-            screen_time,
-
-        daily_scores=
-            daily_scores,
-
-        insights=
-            insights,
+        daily_inputs=daily_inputs,
+        activity=activity,
+        calendar_events=(
+            calendar_events
+        ),
+        screen_time=screen_time,
+        daily_scores=daily_scores,
+        insights=insights,
     )
 
 
@@ -459,20 +461,24 @@ def get_user_data(
 def update_user_role(
     user_id: UUID,
     data: AdminRoleUpdate,
+    request: Request,
     current_admin: User = Depends(
         get_current_admin
     ),
     db: Session = Depends(get_db),
 ):
-
     user = get_user_or_404(
         user_id,
-        db
+        db,
+    )
+
+    previous_role = (
+        user.role
     )
 
     new_role = get_role(
         db,
-        data.role
+        data.role,
     )
 
     if (
@@ -480,52 +486,437 @@ def update_user_role(
         and data.role != ROLE_ADMIN
     ):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
             detail=(
                 "You cannot remove your "
                 "own admin role"
             ),
         )
 
-    user.role_id = new_role.id
+    user.role_id = (
+        new_role.id
+    )
 
     db.commit()
     db.refresh(user)
+
+    write_audit_log(
+        event_type=(
+            "admin_role_changed"
+        ),
+        request=request,
+        user_id=user.id,
+        actor_user_id=(
+            current_admin.id
+        ),
+        entity_type="user",
+        entity_id=str(
+            user.id
+        ),
+        details={
+            "previous_role":
+                previous_role,
+
+            "new_role":
+                data.role,
+        },
+    )
 
     return user
 
 
 @router.delete(
     "/users/{user_id}",
-    status_code=
-        status.HTTP_204_NO_CONTENT,
+    status_code=(
+        status.HTTP_204_NO_CONTENT
+    ),
 )
 def delete_user(
     user_id: UUID,
+    request: Request,
     current_admin: User = Depends(
         get_current_admin
     ),
     db: Session = Depends(get_db),
 ):
-
     user = get_user_or_404(
         user_id,
-        db
+        db,
     )
 
     if user.id == current_admin.id:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
             detail=(
-                "You cannot delete "
-                "your own admin account"
+                "You cannot delete your "
+                "own admin account"
             ),
         )
 
-    db.delete(
+    deleted_user_id = (
+        user.id
+    )
+
+    deleted_user_email = (
+        user.email
+    )
+
+    db.delete(user)
+    db.commit()
+
+    write_audit_log(
+        event_type=(
+            "admin_user_deleted"
+        ),
+        request=request,
+        actor_user_id=(
+            current_admin.id
+        ),
+        entity_type="user",
+        entity_id=str(
+            deleted_user_id
+        ),
+        details={
+            "email":
+                deleted_user_email
+        },
+    )
+
+    return None
+
+
+# ============================================================
+# ADMIN USER CREATE + PASSWORD RESET V2
+# ============================================================
+
+from datetime import (
+    datetime,
+    timezone,
+)
+
+from sqlalchemy.exc import IntegrityError
+
+from app.admin_schemas import (
+    AdminPasswordReset,
+    AdminPasswordResetResponse,
+    AdminUserCreate,
+)
+
+from app.auth import (
+    hash_password,
+    revoke_all_user_sessions,
+)
+
+from app.email_service import (
+    send_welcome_email,
+)
+
+from app.extended_models import (
+    OtpCode,
+)
+
+from app.otp import (
+    normalize_email,
+)
+
+from app.user_defaults import (
+    get_or_create_notification_preferences,
+    get_or_create_profile,
+)
+
+
+def _invalidate_active_user_otps(
+    *,
+    email: str,
+    db: Session,
+    reason: str,
+) -> int:
+    now = datetime.now(
+        timezone.utc
+    )
+
+    challenges = db.scalars(
+        select(OtpCode).where(
+            OtpCode.target_email
+            == email,
+
+            OtpCode.is_valid
+            .is_(True),
+        )
+    ).all()
+
+    for challenge in challenges:
+        challenge.is_valid = False
+        challenge.invalidated_at = now
+        challenge.invalid_reason = (
+            reason
+        )
+
+    return len(
+        challenges
+    )
+
+
+@router.post(
+    "/users",
+    response_model=AdminUserResponse,
+    status_code=(
+        status.HTTP_201_CREATED
+    ),
+)
+def create_user_by_admin(
+    data: AdminUserCreate,
+    request: Request,
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+    db: Session = Depends(
+        get_db
+    ),
+):
+    email = normalize_email(
+        str(data.email)
+    )
+
+    existing_user = db.scalar(
+        select(User).where(
+            User.email == email
+        )
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail=(
+                "Email already registered"
+            ),
+        )
+
+    role = get_role(
+        db,
+        data.role,
+    )
+
+    user = User(
+        email=email,
+        full_name=(
+            data.full_name.strip()
+        ),
+        password_hash=(
+            hash_password(
+                data.password
+            )
+        ),
+        role_id=role.id,
+    )
+
+    db.add(
         user
     )
 
-    db.commit()
+    try:
+        # Obtain user UUID before
+        # creating dependent rows.
+        db.flush()
 
-    return None
+        profile = (
+            get_or_create_profile(
+                user,
+                db,
+            )
+        )
+
+        profile.birth_date = (
+            data.birth_date
+        )
+
+        profile.country = (
+            data.country
+        )
+
+        profile.occupation = (
+            data.occupation
+        )
+
+        profile.timezone = (
+            data.timezone
+        )
+
+        profile.preferred_language = (
+            data.preferred_language
+        )
+
+        profile.login_otp_enabled = (
+            data.login_otp_enabled
+        )
+
+        get_or_create_notification_preferences(
+            user,
+            db,
+        )
+
+        invalidated_otp_count = (
+            _invalidate_active_user_otps(
+                email=email,
+                db=db,
+                reason=(
+                    "admin_account_created"
+                ),
+            )
+        )
+
+        db.commit()
+
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail=(
+                "Email already registered"
+            ),
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
+    db.refresh(
+        user
+    )
+
+    write_audit_log(
+        event_type=(
+            "admin_user_created"
+        ),
+        request=request,
+        user_id=user.id,
+        actor_user_id=(
+            current_admin.id
+        ),
+        entity_type="user",
+        entity_id=str(
+            user.id
+        ),
+        details={
+            "email":
+                user.email,
+
+            "role":
+                user.role,
+
+            "otp_bypassed":
+                True,
+
+            "invalidated_otp_count":
+                invalidated_otp_count,
+        },
+    )
+
+    if data.send_welcome_email:
+        send_welcome_email(
+            target_email=user.email,
+            full_name=user.full_name,
+            user_id=user.id,
+        )
+
+    return user
+
+
+@router.put(
+    "/users/{user_id}/password",
+    response_model=(
+        AdminPasswordResetResponse
+    ),
+)
+def reset_user_password_by_admin(
+    user_id: UUID,
+    data: AdminPasswordReset,
+    request: Request,
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+    db: Session = Depends(
+        get_db
+    ),
+):
+    user = get_user_or_404(
+        user_id,
+        db,
+    )
+
+    user.password_hash = (
+        hash_password(
+            data.new_password
+        )
+    )
+
+    revoked_sessions = (
+        revoke_all_user_sessions(
+            user_id=user.id,
+            db=db,
+            reason=(
+                "admin_password_reset"
+            ),
+        )
+    )
+
+    invalidated_otp_count = (
+        _invalidate_active_user_otps(
+            email=user.email,
+            db=db,
+            reason=(
+                "admin_password_reset"
+            ),
+        )
+    )
+
+    db.commit()
+    db.refresh(
+        user
+    )
+
+    write_audit_log(
+        event_type=(
+            "admin_password_reset"
+        ),
+        request=request,
+        user_id=user.id,
+        actor_user_id=(
+            current_admin.id
+        ),
+        entity_type="user",
+        entity_id=str(
+            user.id
+        ),
+        details={
+            "revoked_sessions":
+                revoked_sessions,
+
+            "invalidated_otp_count":
+                invalidated_otp_count,
+
+            "otp_bypassed":
+                True,
+        },
+    )
+
+    return (
+        AdminPasswordResetResponse(
+            message=(
+                "Password reset "
+                "successfully"
+            ),
+            revoked_sessions=(
+                revoked_sessions
+            ),
+        )
+    )

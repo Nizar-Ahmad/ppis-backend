@@ -91,3 +91,133 @@ class AdminUserDataResponse(BaseModel):
     insights: list[
         InsightResponse
     ]
+
+
+# ============================================================
+# ADMIN USER MANAGEMENT V2
+# ============================================================
+
+from datetime import date
+from zoneinfo import (
+    ZoneInfo,
+    ZoneInfoNotFoundError,
+)
+
+from pydantic import (
+    Field,
+    field_validator,
+    model_validator,
+)
+
+
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+
+    full_name: str = Field(
+        min_length=2,
+        max_length=150,
+    )
+
+    password: str = Field(
+        min_length=8,
+        max_length=128,
+    )
+
+    confirm_password: str = Field(
+        min_length=8,
+        max_length=128,
+    )
+
+    role: Literal[
+        "USER",
+        "ADMIN",
+    ] = "USER"
+
+    birth_date: date | None = None
+
+    country: str | None = Field(
+        default=None,
+        max_length=100,
+    )
+
+    occupation: str | None = Field(
+        default=None,
+        max_length=150,
+    )
+
+    timezone: str = Field(
+        default="UTC",
+        min_length=1,
+        max_length=100,
+    )
+
+    preferred_language: str = Field(
+        default="en",
+        min_length=2,
+        max_length=20,
+    )
+
+    login_otp_enabled: bool = False
+
+    send_welcome_email: bool = True
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(
+        cls,
+        value: str,
+    ) -> str:
+        try:
+            ZoneInfo(value)
+
+        except ZoneInfoNotFoundError:
+            raise ValueError(
+                "Invalid timezone"
+            )
+
+        return value
+
+    @model_validator(mode="after")
+    def validate_passwords(self):
+        if (
+            self.password
+            != self.confirm_password
+        ):
+            raise ValueError(
+                "password and "
+                "confirm_password "
+                "do not match"
+            )
+
+        return self
+
+
+class AdminPasswordReset(BaseModel):
+    new_password: str = Field(
+        min_length=8,
+        max_length=128,
+    )
+
+    confirm_new_password: str = Field(
+        min_length=8,
+        max_length=128,
+    )
+
+    @model_validator(mode="after")
+    def validate_passwords(self):
+        if (
+            self.new_password
+            != self.confirm_new_password
+        ):
+            raise ValueError(
+                "new_password and "
+                "confirm_new_password "
+                "do not match"
+            )
+
+        return self
+
+
+class AdminPasswordResetResponse(BaseModel):
+    message: str
+    revoked_sessions: int
