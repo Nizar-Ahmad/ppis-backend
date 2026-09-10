@@ -15,23 +15,18 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
+from app.schemas.admin import (
     AdminObservabilitySummaryResponse,
     ApiUsageResponse,
     AuditLogResponse,
 )
-from app.admin_auth import (
+from app.services.auth.admin import (
     get_current_admin,
 )
-from app.database import get_db
-from app.extended_models import (
-    ApiUsageStat,
-    AuditLog,
-    AuthSession,
-    EmailLog,
-    Feedback,
-    OtpCode,
-)
+from app.core.database import get_db
+from app.models.auth import AuthSession, OtpCode
+from app.models.feedback import Feedback
+from app.models.observability import ApiUsageStat, AuditLog, EmailLog
 from app.models import User
 
 

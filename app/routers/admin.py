@@ -14,17 +14,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session
 
-from app.admin_auth import (
+from app.services.auth.admin import (
     get_current_admin,
 )
-from app.admin_schemas import (
+from app.schemas.admin import (
     AdminRoleUpdate,
     AdminStatisticsResponse,
     AdminUserDataResponse,
     AdminUserResponse,
 )
-from app.audit import write_audit_log
-from app.database import get_db
+from app.services.observability.audit import write_audit_log
+from app.core.database import get_db
 from app.models import (
     ActivityStat,
     CalendarEvent,
@@ -36,7 +36,7 @@ from app.models import (
     ScreenTimeStat,
     User,
 )
-from app.roles import (
+from app.core.roles import (
     ROLE_ADMIN,
     ROLE_USER,
     get_role,
@@ -600,30 +600,30 @@ from datetime import (
 
 from sqlalchemy.exc import IntegrityError
 
-from app.admin_schemas import (
+from app.schemas.admin import (
     AdminPasswordReset,
     AdminPasswordResetResponse,
     AdminUserCreate,
 )
 
-from app.auth import (
+from app.services.auth import (
     hash_password,
     revoke_all_user_sessions,
 )
 
-from app.email_service import (
+from app.notifications.email.service import (
     send_welcome_email,
 )
 
-from app.extended_models import (
+from app.models.auth import (
     OtpCode,
 )
 
-from app.otp import (
+from app.services.otp.service import (
     normalize_email,
 )
 
-from app.user_defaults import (
+from app.services.users.defaults import (
     get_or_create_notification_preferences,
     get_or_create_profile,
 )

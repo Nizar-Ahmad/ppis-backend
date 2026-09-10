@@ -9,15 +9,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
+from app.schemas.feedback import (
     FeedbackResponse,
     FeedbackStatisticsResponse,
 )
-from app.admin_auth import (
+from app.services.auth.admin import (
     get_current_admin,
 )
-from app.database import get_db
-from app.extended_models import Feedback
+from app.core.database import get_db
+from app.models.feedback import Feedback
 from app.models import User
 
 

@@ -12,16 +12,16 @@ from zoneinfo import (
 
 from sqlalchemy import select
 
-from app.config import settings
-from app.database import SessionLocal
-from app.email_service import (
+from app.core.config import settings
+from app.core.database import SessionLocal
+from app.notifications.email.service import (
     send_report_reminder_email,
 )
 from app.models import (
     DailyInput,
     User,
 )
-from app.user_defaults import (
+from app.services.users.defaults import (
     get_or_create_notification_preferences,
     get_or_create_profile,
 )

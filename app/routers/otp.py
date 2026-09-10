@@ -14,18 +14,18 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
+from app.schemas.otp import (
     OtpChallengeResponse,
     OtpResendRequest,
     OtpSendRequest,
     OtpVerifyRequest,
     OtpVerifyResponse,
 )
-from app.account_service import (
+from app.services.auth.accounts import (
     maybe_send_new_login_notification,
 )
-from app.audit import write_audit_log
-from app.auth import (
+from app.services.observability.audit import write_audit_log
+from app.services.auth import (
     AuthContext,
     create_session_and_tokens,
     get_optional_auth_context,
@@ -34,17 +34,15 @@ from app.auth import (
     revoke_all_user_sessions,
     verify_password,
 )
-from app.config import settings
-from app.database import get_db
-from app.email_service import (
+from app.core.config import settings
+from app.core.database import get_db
+from app.notifications.email.service import (
     send_welcome_email,
 )
-from app.extended_models import (
-    AuthSession,
-    UserProfile,
-)
+from app.models.auth import AuthSession
+from app.models.user import UserProfile
 from app.models import User
-from app.otp import (
+from app.services.otp.service import (
     OTP_PURPOSE_CHANGE_PASSWORD,
     OTP_PURPOSE_LOGIN,
     OTP_PURPOSE_RESET_PASSWORD,
@@ -55,11 +53,11 @@ from app.otp import (
     normalize_email,
     verify_otp_code,
 )
-from app.roles import (
+from app.core.roles import (
     get_default_user_role,
 )
-from app.time_utils import ensure_utc
-from app.user_defaults import (
+from app.core.time import ensure_utc
+from app.services.users.defaults import (
     get_or_create_notification_preferences,
     get_or_create_profile,
 )

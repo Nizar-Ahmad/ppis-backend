@@ -9,8 +9,8 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
-from app.database import get_db
+from app.services.auth.dependencies import get_current_user
+from app.core.database import get_db
 from app.models import ActivityStat, User
 from app.schemas import (
     ActivityCreate,

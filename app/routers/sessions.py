@@ -10,22 +10,19 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
-    MessageResponse,
-    RefreshTokenRequest,
-    SessionResponse,
-    TokenResponseV2,
-)
-from app.audit import write_audit_log
-from app.auth import (
+from app.schemas.common import MessageResponse
+from app.schemas.auth import RefreshTokenRequest, TokenResponseV2
+from app.schemas.sessions import SessionResponse
+from app.services.observability.audit import write_audit_log
+from app.services.auth import (
     AuthContext,
     get_current_auth_context,
     revoke_all_user_sessions,
     revoke_session,
     rotate_refresh_tokens,
 )
-from app.database import get_db
-from app.extended_models import (
+from app.core.database import get_db
+from app.models.auth import (
     AuthSession,
 )
 

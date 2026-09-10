@@ -10,21 +10,18 @@ from starlette.concurrency import (
     run_in_threadpool,
 )
 
-from app import (
-    extended_models,
-    models,
-)
-from app.config import settings
-from app.database import (
+import app.models
+from app.core.config import settings
+from app.core.database import (
     Base,
     SessionLocal,
     engine,
 )
-from app.metrics import (
+from app.services.observability.metrics import (
     record_api_usage,
 )
 from app.models import Role
-from app.roles import (
+from app.core.roles import (
     ROLE_ADMIN,
     ROLE_USER,
 )

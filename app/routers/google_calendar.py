@@ -21,10 +21,10 @@ from jwt.exceptions import InvalidTokenError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
-from app.config import settings
-from app.database import get_db
-from app.google_calendar import (
+from app.services.auth.dependencies import get_current_user
+from app.core.config import settings
+from app.core.database import get_db
+from app.integrations.google.calendar import (
     GOOGLE_REVOKE_URL,
     google_calendar_get,
     refresh_google_access_token,

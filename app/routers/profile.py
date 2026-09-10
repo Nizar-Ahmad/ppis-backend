@@ -7,18 +7,18 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
+from app.schemas.profile import (
     NotificationPreferenceResponse,
     NotificationPreferenceUpdate,
     ProfileResponse,
     ProfileUpdate,
 )
-from app.audit import write_audit_log
-from app.auth import (
+from app.services.observability.audit import write_audit_log
+from app.services.auth import (
     get_current_auth_context,
 )
-from app.database import get_db
-from app.user_defaults import (
+from app.core.database import get_db
+from app.services.users.defaults import (
     get_or_create_notification_preferences,
     get_or_create_profile,
 )

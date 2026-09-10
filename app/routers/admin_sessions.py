@@ -15,17 +15,15 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.account_schemas import (
-    MessageResponse,
-    SessionResponse,
-)
-from app.admin_auth import (
+from app.schemas.common import MessageResponse
+from app.schemas.sessions import SessionResponse
+from app.services.auth.admin import (
     get_current_admin,
 )
-from app.audit import write_audit_log
-from app.auth import revoke_session
-from app.database import get_db
-from app.extended_models import (
+from app.services.observability.audit import write_audit_log
+from app.services.auth.sessions import revoke_session
+from app.core.database import get_db
+from app.models.auth import (
     AuthSession,
 )
 from app.models import User

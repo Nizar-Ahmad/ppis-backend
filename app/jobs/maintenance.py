@@ -10,16 +10,11 @@ from sqlalchemy import (
     or_,
 )
 
-from app.config import settings
-from app.database import SessionLocal
-from app.extended_models import (
-    ApiUsageStat,
-    AuditLog,
-    AuthSession,
-    EmailLog,
-    OtpCode,
-)
-from app.otp import (
+from app.core.config import settings
+from app.core.database import SessionLocal
+from app.models.auth import AuthSession, OtpCode
+from app.models.observability import ApiUsageStat, AuditLog, EmailLog
+from app.services.otp.service import (
     invalidate_expired_otps,
 )
 
