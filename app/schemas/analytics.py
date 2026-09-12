@@ -1,6 +1,9 @@
 from datetime import date, datetime
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
+
+
 class DailyScoreResponse(BaseModel):
     id: UUID
     entry_date: date
@@ -10,13 +13,21 @@ class DailyScoreResponse(BaseModel):
     meeting_load_score: int
     distraction_score: int
     activity_score: int
+    data_coverage: float
+    stress_data_coverage: float
     created_at: datetime
     updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
 class WeeklyAnalyticsResponse(BaseModel):
     start_date: date
     end_date: date
     days_analyzed: int
+    subjective_days: int
     average_sleep_hours: float
     average_mood: float
     average_energy_level: float
@@ -25,8 +36,12 @@ class WeeklyAnalyticsResponse(BaseModel):
     total_screen_minutes: int
     average_productivity_score: float
     average_stress_index: float
+    average_data_coverage: float
+    average_stress_data_coverage: float
     best_day: date | None
     worst_day: date | None
+
+
 class InsightResponse(BaseModel):
     id: UUID
     start_date: date
@@ -34,13 +49,19 @@ class InsightResponse(BaseModel):
     insight_type: str
     message: str
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
 class MonthlyAnalyticsResponse(BaseModel):
     year: int
     month: int
     start_date: date
     end_date: date
     days_analyzed: int
+    subjective_days: int
     average_sleep_hours: float
     average_mood: float
     average_energy_level: float
@@ -49,5 +70,7 @@ class MonthlyAnalyticsResponse(BaseModel):
     total_screen_minutes: int
     average_productivity_score: float
     average_stress_index: float
+    average_data_coverage: float
+    average_stress_data_coverage: float
     best_day: date | None
     worst_day: date | None

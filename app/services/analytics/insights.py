@@ -4,10 +4,17 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import ActivityStat, DailyInput, Insight, ScreenTimeStat, User
+from app.models import (
+    ActivityStat,
+    DailyInput,
+    Insight,
+    ScreenTimeStat,
+    User,
+)
 from app.services.analytics.daily import (
     calculate_and_save_daily_score,
-    get_meeting_minutes_for_day,
+    get_available_dates_between,
+    get_calendar_metrics_for_day,
 )
 
 
@@ -23,43 +30,56 @@ def get_weekly_insights(
     current_user: User,
     db: Session,
 ) -> list[Insight]:
-    end_date = start_date + timedelta(days=6)
+    end_date = start_date + timedelta(
+        days=6
+    )
+
+    analysis_dates = (
+        get_available_dates_between(
+            user_id=current_user.id,
+            start_date=start_date,
+            end_date=end_date,
+            db=db,
+        )
+    )
+
+    if not analysis_dates:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "No analytics data found "
+                "for this week"
+            ),
+        )
 
     daily_inputs = db.scalars(
         select(DailyInput)
         .where(
-            DailyInput.user_id == current_user.id,
-            DailyInput.entry_date >= start_date,
-            DailyInput.entry_date <= end_date,
+            DailyInput.user_id
+            == current_user.id,
+            DailyInput.entry_date
+            >= start_date,
+            DailyInput.entry_date
+            <= end_date,
         )
         .order_by(
             DailyInput.entry_date.asc()
         )
     ).all()
 
-    if not daily_inputs:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No daily inputs found for this week",
-        )
-
-    # Calculate or refresh scores for every available day.
     scores = {}
 
-    for daily_input in daily_inputs:
+    for analysis_date in analysis_dates:
         score = calculate_and_save_daily_score(
-            daily_input.entry_date,
+            analysis_date,
             current_user,
             db,
         )
-
-        scores[daily_input.entry_date] = score
+        scores[analysis_date] = score
 
     generated_insights = []
-
-    # --------------------------------------------------
-    # Weekly summary
-    # --------------------------------------------------
 
     productivity_values = [
         score.productivity_score
@@ -69,26 +89,39 @@ def get_weekly_insights(
     stress_values = [
         score.stress_index
         for score in scores.values()
+        if score.stress_data_coverage > 0
+    ]
+
+    coverage_values = [
+        score.data_coverage
+        for score in scores.values()
     ]
 
     best_score = max(
         scores.values(),
-        key=lambda item: item.productivity_score
+        key=lambda item:
+            item.productivity_score,
     )
 
     worst_score = min(
         scores.values(),
-        key=lambda item: item.productivity_score
+        key=lambda item:
+            item.productivity_score,
     )
 
     average_productivity = round(
         average(productivity_values),
-        1
+        1,
     )
 
     average_stress = round(
         average(stress_values),
-        1
+        1,
+    )
+
+    average_coverage = round(
+        average(coverage_values),
+        1,
     )
 
     generated_insights.append(
@@ -98,16 +131,15 @@ def get_weekly_insights(
                 f"Average productivity was "
                 f"{average_productivity}/100 and average "
                 f"stress was {average_stress}/100. "
+                f"Average data coverage was "
+                f"{average_coverage}%. "
                 f"The best productivity day was "
                 f"{best_score.entry_date} and the lowest "
-                f"productivity day was {worst_score.entry_date}."
+                f"productivity day was "
+                f"{worst_score.entry_date}."
             ),
         )
     )
-
-    # --------------------------------------------------
-    # Sleep vs productivity
-    # --------------------------------------------------
 
     good_sleep_productivity = []
     low_sleep_productivity = []
@@ -134,11 +166,9 @@ def get_weekly_insights(
         good_sleep_average = average(
             good_sleep_productivity
         )
-
         low_sleep_average = average(
             low_sleep_productivity
         )
-
         difference = (
             good_sleep_average
             - low_sleep_average
@@ -157,7 +187,6 @@ def get_weekly_insights(
                     ),
                 )
             )
-
         elif difference <= -5:
             generated_insights.append(
                 (
@@ -171,15 +200,14 @@ def get_weekly_insights(
                 )
             )
 
-    # --------------------------------------------------
-    # Screen time vs productivity
-    # --------------------------------------------------
-
     screen_records = db.scalars(
         select(ScreenTimeStat).where(
-            ScreenTimeStat.user_id == current_user.id,
-            ScreenTimeStat.entry_date >= start_date,
-            ScreenTimeStat.entry_date <= end_date,
+            ScreenTimeStat.user_id
+            == current_user.id,
+            ScreenTimeStat.entry_date
+            >= start_date,
+            ScreenTimeStat.entry_date
+            <= end_date,
         )
     ).all()
 
@@ -190,7 +218,6 @@ def get_weekly_insights(
         score = scores.get(
             record.entry_date
         )
-
         if not score:
             continue
 
@@ -210,11 +237,9 @@ def get_weekly_insights(
         high_screen_average = average(
             high_screen_productivity
         )
-
         low_screen_average = average(
             low_screen_productivity
         )
-
         difference = (
             low_screen_average
             - high_screen_average
@@ -233,15 +258,14 @@ def get_weekly_insights(
                 )
             )
 
-    # --------------------------------------------------
-    # Activity vs productivity
-    # --------------------------------------------------
-
     activity_records = db.scalars(
         select(ActivityStat).where(
-            ActivityStat.user_id == current_user.id,
-            ActivityStat.entry_date >= start_date,
-            ActivityStat.entry_date <= end_date,
+            ActivityStat.user_id
+            == current_user.id,
+            ActivityStat.entry_date
+            >= start_date,
+            ActivityStat.entry_date
+            <= end_date,
         )
     ).all()
 
@@ -252,7 +276,6 @@ def get_weekly_insights(
         score = scores.get(
             record.entry_date
         )
-
         if not score:
             continue
 
@@ -277,11 +300,9 @@ def get_weekly_insights(
         active_average = average(
             active_productivity
         )
-
         low_activity_average = average(
             low_activity_productivity
         )
-
         difference = (
             active_average
             - low_activity_average
@@ -289,36 +310,35 @@ def get_weekly_insights(
 
         if difference >= 5:
             generated_insights.append(
-            (
-                "activity_productivity",
                 (
-                    "More active days coincided with a "
-                    f"productivity score about "
-                    f"{round(difference, 1)} points higher "
-                    "on average."
-                ),
+                    "activity_productivity",
+                    (
+                        "More active days coincided with a "
+                        f"productivity score about "
+                        f"{round(difference, 1)} points higher "
+                        "on average."
+                    ),
+                )
             )
-            )
-
-    # --------------------------------------------------
-    # Meeting load vs productivity
-    # --------------------------------------------------
 
     high_meeting_productivity = []
     low_meeting_productivity = []
 
-    for daily_input in daily_inputs:
-
-        meeting_minutes = (
-            get_meeting_minutes_for_day(
-                current_user.id,
-                daily_input.entry_date,
-                db,
-            )
+    for analysis_date in analysis_dates:
+        (
+            meeting_minutes,
+            has_calendar_data,
+        ) = get_calendar_metrics_for_day(
+            current_user.id,
+            analysis_date,
+            db,
         )
 
+        if not has_calendar_data:
+            continue
+
         productivity = (
-            scores[daily_input.entry_date]
+            scores[analysis_date]
             .productivity_score
         )
 
@@ -338,11 +358,9 @@ def get_weekly_insights(
         high_meeting_average = average(
             high_meeting_productivity
         )
-
         low_meeting_average = average(
             low_meeting_productivity
         )
-
         difference = (
             low_meeting_average
             - high_meeting_average
@@ -361,15 +379,14 @@ def get_weekly_insights(
                 )
             )
 
-    # --------------------------------------------------
-    # Replace previously generated insights for this week
-    # --------------------------------------------------
-
     existing_insights = db.scalars(
         select(Insight).where(
-            Insight.user_id == current_user.id,
-            Insight.start_date == start_date,
-            Insight.end_date == end_date,
+            Insight.user_id
+            == current_user.id,
+            Insight.start_date
+            == start_date,
+            Insight.end_date
+            == end_date,
         )
     ).all()
 
@@ -378,8 +395,9 @@ def get_weekly_insights(
 
     new_insights = []
 
-    for insight_type, message in generated_insights:
-
+    for insight_type, message in (
+        generated_insights
+    ):
         insight = Insight(
             user_id=current_user.id,
             start_date=start_date,
@@ -387,12 +405,8 @@ def get_weekly_insights(
             insight_type=insight_type,
             message=message,
         )
-
         db.add(insight)
-
-        new_insights.append(
-            insight
-        )
+        new_insights.append(insight)
 
     db.commit()
 

@@ -77,6 +77,8 @@ class DailyScore(Base):
     meeting_load_score: Mapped[int] = mapped_column(Integer, nullable=False)
     distraction_score: Mapped[int] = mapped_column(Integer, nullable=False)
     activity_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    data_coverage: Mapped[float] = mapped_column(Float, default=0, nullable=False)
+    stress_data_coverage: Mapped[float] = mapped_column(Float, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     user: Mapped["User"] = relationship(back_populates="daily_scores")
