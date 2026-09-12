@@ -8,5 +8,5 @@ from app.schemas.profile import *  # noqa: F403
 from app.schemas.feedback import *  # noqa: F403
 from app.schemas.analytics import *  # noqa: F403
 from app.schemas.productivity import *  # noqa: F403
-from app.schemas.google_fit import *  # noqa: F403
+from app.schemas.google_health import *  # noqa: F403
 from app.schemas.admin import *  # noqa: F403
