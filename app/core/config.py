@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     audit_log_retention_days: int = 365
     api_usage_retention_days: int = 365
 
+    daily_report_hour_local: int = 1
     report_reminder_hour_local: int = 18
 
     google_web_client_id: str
@@ -43,6 +44,9 @@ class Settings(BaseSettings):
 
     google_calendar_redirect_uri_local: str
     google_calendar_redirect_uri_server: str
+
+    google_calendar_sync_days_back: int = 7
+    google_calendar_sync_days_forward: int = 30
 
     model_config = SettingsConfigDict(
         env_file=".env",
