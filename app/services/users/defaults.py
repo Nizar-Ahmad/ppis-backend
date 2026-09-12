@@ -50,6 +50,7 @@ def get_or_create_notification_preferences(
 
     preferences = NotificationPreference(
         user_id=user.id,
+        daily_report_email=True,
         weekly_report_email=True,
         monthly_report_email=True,
         new_login_email=True,

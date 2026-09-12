@@ -70,9 +70,11 @@ class NotificationPreference(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    daily_report_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     weekly_report_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     monthly_report_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     new_login_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_daily_report_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_weekly_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_monthly_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

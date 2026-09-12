@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.observability import EmailLog
 from app.notifications.email.sender import send_smtp_message
+from app.notifications.email.templates.daily_report import build_daily_report_email
 from app.notifications.email.templates.new_login import build_new_login_email
 from app.notifications.email.templates.otp import build_otp_email
 from app.notifications.email.templates.report_reminder import build_report_reminder_email
@@ -37,7 +38,6 @@ def _record_email_log(
             db.add(log)
             db.commit()
     except Exception:
-        # Email logging must never break the application request.
         return
 
 
@@ -117,6 +117,36 @@ def send_new_login_email(
     return send_email(target_email=target_email, subject=subject, text_body=text_body,
                       html_body=html_body, email_type="new_login", user_id=user_id,
                       raise_on_failure=False)
+
+
+def send_daily_report_email(
+    *,
+    target_email: str,
+    full_name: str,
+    user_id: UUID,
+    report_date: date,
+    productivity_score: int,
+    stress_index: int,
+    data_coverage: float,
+    stress_data_coverage: float,
+) -> bool:
+    subject, text_body, html_body = build_daily_report_email(
+        full_name=full_name,
+        report_date=report_date,
+        productivity_score=productivity_score,
+        stress_index=stress_index,
+        data_coverage=data_coverage,
+        stress_data_coverage=stress_data_coverage,
+    )
+    return send_email(
+        target_email=target_email,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+        email_type="daily_report",
+        user_id=user_id,
+        raise_on_failure=False,
+    )
 
 
 def send_report_reminder_email(

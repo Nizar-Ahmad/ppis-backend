@@ -14,12 +14,14 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.database import SessionLocal
+from app.models import User
 from app.notifications.email.service import (
+    send_daily_report_email,
     send_report_reminder_email,
 )
-from app.models import (
-    DailyInput,
-    User,
+from app.services.analytics.daily import (
+    calculate_and_save_daily_score,
+    get_available_dates_between,
 )
 from app.services.users.defaults import (
     get_or_create_notification_preferences,
@@ -27,12 +29,9 @@ from app.services.users.defaults import (
 )
 
 
-def safe_timezone(
-    value: str,
-) -> ZoneInfo:
+def safe_timezone(value: str) -> ZoneInfo:
     try:
         return ZoneInfo(value)
-
     except ZoneInfoNotFoundError:
         return ZoneInfo("UTC")
 
@@ -43,11 +42,9 @@ def already_sent_this_week(
 ) -> bool:
     if not sent_at:
         return False
-
     sent_local = sent_at.astimezone(
         local_now.tzinfo
     )
-
     return (
         sent_local.isocalendar()[:2]
         == local_now.isocalendar()[:2]
@@ -60,15 +57,12 @@ def already_sent_this_month(
 ) -> bool:
     if not sent_at:
         return False
-
     sent_local = sent_at.astimezone(
         local_now.tzinfo
     )
-
     return (
         sent_local.year == local_now.year
-        and sent_local.month
-        == local_now.month
+        and sent_local.month == local_now.month
     )
 
 
@@ -78,30 +72,17 @@ def get_previous_month_range(
     if current_date.month == 1:
         year = current_date.year - 1
         month = 12
-
     else:
         year = current_date.year
         month = current_date.month - 1
 
-    start_date = date(
-        year,
-        month,
-        1,
-    )
-
+    start_date = date(year, month, 1)
     end_date = date(
         year,
         month,
-        monthrange(
-            year,
-            month,
-        )[1],
+        monthrange(year, month)[1],
     )
-
-    return (
-        start_date,
-        end_date,
-    )
+    return start_date, end_date
 
 
 def user_has_data_between(
@@ -111,29 +92,22 @@ def user_has_data_between(
     start_date: date,
     end_date: date,
 ) -> bool:
-    record = db.scalar(
-        select(
-            DailyInput.id
+    return bool(
+        get_available_dates_between(
+            user_id=user_id,
+            start_date=start_date,
+            end_date=end_date,
+            db=db,
         )
-        .where(
-            DailyInput.user_id
-            == user_id,
-
-            DailyInput.entry_date
-            >= start_date,
-
-            DailyInput.entry_date
-            <= end_date,
-        )
-        .limit(1)
     )
 
-    return record is not None
 
-
-def run_report_reminders() -> None:
-    now_utc = datetime.now(
-        timezone.utc
+def run_report_reminders(
+    now_utc: datetime | None = None,
+) -> None:
+    now_utc = (
+        now_utc
+        or datetime.now(timezone.utc)
     )
 
     with SessionLocal() as db:
@@ -142,48 +116,79 @@ def run_report_reminders() -> None:
         ).all()
 
         for user in users:
-            profile = (
-                get_or_create_profile(
-                    user,
-                    db,
-                )
+            profile = get_or_create_profile(
+                user,
+                db,
             )
-
             preferences = (
                 get_or_create_notification_preferences(
                     user,
                     db,
                 )
             )
-
             db.commit()
-
             db.refresh(profile)
             db.refresh(preferences)
 
             timezone_info = safe_timezone(
                 profile.timezone
             )
-
-            local_now = (
-                now_utc.astimezone(
-                    timezone_info
-                )
+            local_now = now_utc.astimezone(
+                timezone_info
             )
 
-            # Respect the user's local timezone.
+            if (
+                preferences.daily_report_email
+                and local_now.hour
+                >= settings.daily_report_hour_local
+            ):
+                report_date = (
+                    local_now.date()
+                    - timedelta(days=1)
+                )
+
+                if (
+                    preferences.last_daily_report_date
+                    != report_date
+                    and user_has_data_between(
+                        db=db,
+                        user_id=user.id,
+                        start_date=report_date,
+                        end_date=report_date,
+                    )
+                ):
+                    score = (
+                        calculate_and_save_daily_score(
+                            report_date,
+                            user,
+                            db,
+                        )
+                    )
+
+                    sent = send_daily_report_email(
+                        target_email=user.email,
+                        full_name=user.full_name,
+                        user_id=user.id,
+                        report_date=report_date,
+                        productivity_score=(
+                            score.productivity_score
+                        ),
+                        stress_index=score.stress_index,
+                        data_coverage=score.data_coverage,
+                        stress_data_coverage=(
+                            score.stress_data_coverage
+                        ),
+                    )
+
+                    if sent:
+                        preferences.last_daily_report_date = report_date
+                        db.commit()
+
             if (
                 local_now.hour
                 < settings.report_reminder_hour_local
             ):
                 continue
-
-            # ==================================================
-            # Weekly report reminder
-            #
-            # Monday = 0
-            # Send Monday for the previous Mon-Sun week.
-            # ==================================================
 
             if (
                 preferences.weekly_report_email
@@ -197,46 +202,28 @@ def run_report_reminders() -> None:
                     local_now.date()
                     - timedelta(days=1)
                 )
-
                 weekly_start_date = (
                     weekly_end_date
                     - timedelta(days=6)
                 )
 
-                has_weekly_data = (
-                    user_has_data_between(
-                        db=db,
+                if user_has_data_between(
+                    db=db,
+                    user_id=user.id,
+                    start_date=weekly_start_date,
+                    end_date=weekly_end_date,
+                ):
+                    sent = send_report_reminder_email(
+                        target_email=user.email,
+                        full_name=user.full_name,
                         user_id=user.id,
+                        report_type="weekly",
                         start_date=weekly_start_date,
                         end_date=weekly_end_date,
                     )
-                )
-
-                if has_weekly_data:
-                    sent = (
-                        send_report_reminder_email(
-                            target_email=user.email,
-                            full_name=user.full_name,
-                            user_id=user.id,
-                            report_type="weekly",
-                            start_date=weekly_start_date,
-                            end_date=weekly_end_date,
-                        )
-                    )
-
                     if sent:
-                        preferences.last_weekly_sent_at = (
-                            now_utc
-                        )
-
+                        preferences.last_weekly_sent_at = now_utc
                         db.commit()
-
-            # ==================================================
-            # Monthly report reminder
-            #
-            # On the first day of a new month,
-            # notify about the previous complete month.
-            # ==================================================
 
             if (
                 preferences.monthly_report_email
@@ -253,32 +240,22 @@ def run_report_reminders() -> None:
                     local_now.date()
                 )
 
-                has_monthly_data = (
-                    user_has_data_between(
-                        db=db,
+                if user_has_data_between(
+                    db=db,
+                    user_id=user.id,
+                    start_date=monthly_start_date,
+                    end_date=monthly_end_date,
+                ):
+                    sent = send_report_reminder_email(
+                        target_email=user.email,
+                        full_name=user.full_name,
                         user_id=user.id,
+                        report_type="monthly",
                         start_date=monthly_start_date,
                         end_date=monthly_end_date,
                     )
-                )
-
-                if has_monthly_data:
-                    sent = (
-                        send_report_reminder_email(
-                            target_email=user.email,
-                            full_name=user.full_name,
-                            user_id=user.id,
-                            report_type="monthly",
-                            start_date=monthly_start_date,
-                            end_date=monthly_end_date,
-                        )
-                    )
-
                     if sent:
-                        preferences.last_monthly_sent_at = (
-                            now_utc
-                        )
-
+                        preferences.last_monthly_sent_at = now_utc
                         db.commit()
 
 

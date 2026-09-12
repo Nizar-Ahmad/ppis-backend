@@ -204,6 +204,10 @@ def get_notification_preferences(
     db.refresh(preferences)
 
     return NotificationPreferenceResponse(
+        daily_report_email=(
+            preferences
+            .daily_report_email
+        ),
         weekly_report_email=(
             preferences
             .weekly_report_email
@@ -281,6 +285,10 @@ def update_notification_preferences(
     )
 
     return NotificationPreferenceResponse(
+        daily_report_email=(
+            preferences
+            .daily_report_email
+        ),
         weekly_report_email=(
             preferences
             .weekly_report_email
