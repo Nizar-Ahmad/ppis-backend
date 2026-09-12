@@ -33,6 +33,7 @@ os.environ.setdefault(
 from app.integrations.google.fit import (
     aggregate_numeric_total,
     milliseconds,
+    move_minutes_from_aggregate,
     simplify_aggregate_response,
 )
 
@@ -72,6 +73,29 @@ class GoogleFitHelpersTests(unittest.TestCase):
         self.assertEqual(
             aggregate_numeric_total(data),
             1202.5,
+        )
+
+    def test_move_minutes_converts_milliseconds(self):
+        data = {
+            "bucket": [
+                {
+                    "dataset": [
+                        {
+                            "point": [
+                                {
+                                    "value": [
+                                        {"intVal": 1_800_000}
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertEqual(
+            move_minutes_from_aggregate(data),
+            30,
         )
 
     def test_simplify_aggregate_response(self):

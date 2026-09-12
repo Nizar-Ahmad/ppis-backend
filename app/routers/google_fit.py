@@ -18,6 +18,7 @@ from app.integrations.google.fit import (
     aggregate_data_type,
     aggregate_numeric_total,
     google_fit_get,
+    move_minutes_from_aggregate,
     refresh_google_fit_access_token,
     simplify_aggregate_response,
 )
@@ -480,9 +481,9 @@ def sync_google_fit_activity(
         )
 
         steps = max(0, round(aggregate_numeric_total(steps_data)))
-        activity_minutes = max(
-            0,
-            min(1440, round(aggregate_numeric_total(minutes_data))),
+        activity_minutes = min(
+            1440,
+            move_minutes_from_aggregate(minutes_data),
         )
 
         if steps == 0 and activity_minutes == 0:

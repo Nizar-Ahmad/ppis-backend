@@ -233,3 +233,8 @@ def aggregate_numeric_total(data: dict) -> float:
                         total += float(value["fpVal"])
 
     return total
+
+
+def move_minutes_from_aggregate(data: dict) -> int:
+    duration_millis = aggregate_numeric_total(data)
+    return max(0, round(duration_millis / 60_000))
