@@ -1,0 +1,11 @@
+[Unit]
+Description=Run PPIS Google Calendar synchronization hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5m
+Unit=ppis-google-calendar-sync.service
+
+[Install]
+WantedBy=timers.target

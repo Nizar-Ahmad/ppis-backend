@@ -1,0 +1,10 @@
+[Unit]
+Description=Run PPIS report processing hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=ppis-report-reminders.service
+
+[Install]
+WantedBy=timers.target

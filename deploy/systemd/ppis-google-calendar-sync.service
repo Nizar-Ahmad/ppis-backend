@@ -1,0 +1,10 @@
+[Unit]
+Description=PPIS scheduled Google Calendar synchronization
+After=network-online.target ppis.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/opt/ppis-backend
+ExecStart=/home/ubuntu/opt/ppis-backend/venv/bin/python -m app.jobs.google_calendar_sync
