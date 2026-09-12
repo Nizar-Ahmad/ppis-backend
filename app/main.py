@@ -37,6 +37,7 @@ from app.routers import (
     daily_inputs,
     feedback,
     google_calendar,
+    google_fit,
     health,
     insights,
     monthly_analytics,
@@ -209,6 +210,10 @@ app.include_router(
 
 app.include_router(
     google_calendar.router
+)
+
+app.include_router(
+    google_fit.router
 )
 
 app.include_router(

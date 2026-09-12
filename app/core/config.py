@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     google_calendar_sync_days_back: int = 7
     google_calendar_sync_days_forward: int = 30
 
+    google_fit_redirect_uri_local: str = (
+        "http://127.0.0.1:8000/auth/google/fit/callback"
+    )
+    google_fit_redirect_uri_server: str = (
+        "https://ppis.thevirtualtrust.com/auth/google/fit/callback"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
