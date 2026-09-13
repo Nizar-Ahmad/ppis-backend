@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -10,6 +10,7 @@ from app.services.analytics.daily import (
     calculate_and_save_daily_score,
     get_available_dates_between,
     get_meeting_minutes_for_day,
+    get_user_timezone,
 )
 
 
@@ -30,8 +31,36 @@ def get_weekly_analytics(
     current_user: User,
     db: Session,
 ) -> WeeklyAnalyticsResponse:
-    end_date = start_date + timedelta(
+    requested_end_date = start_date + timedelta(
         days=6
+    )
+
+    timezone_info = get_user_timezone(
+        current_user.id,
+        db,
+    )
+
+    local_today = datetime.now(
+        timezone_info
+    ).date()
+
+    # A current weekly report may contain future Google
+    # Calendar events later in the week. Those dates are
+    # schedule data, not completed productivity days.
+    if start_date > local_today:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "No analytics data found "
+                "for this week"
+            ),
+        )
+
+    end_date = min(
+        requested_end_date,
+        local_today,
     )
 
     analysis_dates = (

@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from app.services.analytics.daily import (
     calculate_and_save_daily_score,
     get_available_dates_between,
     get_meeting_minutes_for_day,
+    get_user_timezone,
 )
 
 
@@ -38,13 +39,43 @@ def get_monthly_analytics(
         1,
     )
 
-    end_date = date(
+    requested_end_date = date(
         year,
         month,
         monthrange(
             year,
             month,
         )[1],
+    )
+
+    timezone_info = get_user_timezone(
+        current_user.id,
+        db,
+    )
+
+    local_today = datetime.now(
+        timezone_info
+    ).date()
+
+    # Analytics must never include future local dates.
+    #
+    # Google Calendar can legitimately contain future
+    # events, but those events must not turn future days
+    # into already-analyzed productivity days.
+    if start_date > local_today:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "No analytics data found "
+                "for this month"
+            ),
+        )
+
+    end_date = min(
+        requested_end_date,
+        local_today,
     )
 
     analysis_dates = (
