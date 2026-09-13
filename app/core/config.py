@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     audit_log_retention_days: int = 365
     api_usage_retention_days: int = 365
 
-    daily_report_hour_local: int = 1
+    daily_report_hour_local: int = 2
     report_reminder_hour_local: int = 18
 
     google_web_client_id: str
