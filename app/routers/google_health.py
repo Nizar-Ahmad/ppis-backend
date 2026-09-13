@@ -28,7 +28,6 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.integrations.google.health import (
-    GOOGLE_REVOKE_URL,
     GOOGLE_TOKEN_URL,
     active_minutes_by_date,
     daily_rollup,
@@ -307,7 +306,7 @@ def connect_google_health(
             "consent",
 
         "include_granted_scopes":
-            "true",
+            "false",
 
         "state":
             state_token,
@@ -654,19 +653,6 @@ def disconnect_google_health(
 
     if not connection:
         return None
-
-    try:
-        requests.post(
-            GOOGLE_REVOKE_URL,
-            params={
-                "token":
-                    connection.refresh_token
-            },
-            timeout=10,
-        )
-
-    except requests.RequestException:
-        pass
 
     db.delete(
         connection

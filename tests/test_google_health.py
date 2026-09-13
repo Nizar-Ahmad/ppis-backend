@@ -222,6 +222,11 @@ class GoogleHealthHelpersTests(
         )
 
         self.assertEqual(
+            body["pageSize"],
+            8,
+        )
+
+        self.assertEqual(
             body["range"]["start"],
             {
                 "date": {

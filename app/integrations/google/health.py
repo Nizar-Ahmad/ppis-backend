@@ -275,6 +275,11 @@ def daily_rollup(
             "be after start_date"
         )
 
+    requested_days = (
+        end_date_exclusive
+        - start_date
+    ).days
+
     body = {
         "range": {
             "start":
@@ -291,8 +296,16 @@ def daily_rollup(
         "windowSizeDays":
             1,
 
+        # dailyRollUp limits the product of
+        # windowSizeDays * pageSize by data type.
+        #
+        # PPIS requests one daily bucket per requested
+        # local date, so asking for exactly that many
+        # buckets avoids artificial 90/14-day violations
+        # and also avoids pagination for our <= 14-day
+        # application windows.
         "pageSize":
-            100,
+            requested_days,
 
         "dataSourceFamily":
             (

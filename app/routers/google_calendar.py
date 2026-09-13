@@ -25,7 +25,6 @@ from app.services.auth.dependencies import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.integrations.google.calendar import (
-    GOOGLE_REVOKE_URL,
     google_calendar_get,
     refresh_google_access_token,
 )
@@ -183,7 +182,7 @@ def connect_google_calendar(
             "consent",
 
         "include_granted_scopes":
-            "true",
+            "false",
 
         "state":
             state_token,
@@ -496,18 +495,6 @@ def disconnect_google_calendar(
 
     if not connection:
         return None
-
-    try:
-        requests.post(
-            GOOGLE_REVOKE_URL,
-            params={
-                "token":
-                    connection.refresh_token
-            },
-            timeout=10,
-        )
-    except requests.RequestException:
-        pass
 
     db.delete(
         connection
