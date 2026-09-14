@@ -1,27 +1,30 @@
 {% extends "admin/base.html" %}
 {% block title %}Observability · PPIS Admin{% endblock %}
 {% block heading %}Observability{% endblock %}
+{% block subheading %}Track API health, delivery signals, authentication activity, and recent platform events.{% endblock %}
 {% block content %}
-<div class="stats-grid compact">
-  <div class="stat-card"><span>Active sessions</span><strong>{{ summary.active_sessions }}</strong></div>
-  <div class="stat-card"><span>OTP requests · 24h</span><strong>{{ summary.otp_requests_last_24h }}</strong><small>{{ summary.otp_failures_last_24h }} failures</small></div>
-  <div class="stat-card"><span>Emails sent · 24h</span><strong>{{ summary.emails_sent_last_24h }}</strong><small>{{ summary.email_failures_last_24h }} failures</small></div>
-  <div class="stat-card"><span>API requests today</span><strong>{{ summary.api_requests_today }}</strong><small>{{ summary.api_server_errors_today }} 5xx</small></div>
-</div>
+<section class="metric-strip metric-strip-four">
+  <div class="metric-item"><span class="metric-label">Active sessions</span><div class="metric-value-row"><strong>{{ summary.active_sessions }}</strong><span>{{ summary.sessions_created_last_24h }} new / 24h</span></div></div>
+  <div class="metric-item"><span class="metric-label">OTP requests</span><div class="metric-value-row"><strong>{{ summary.otp_requests_last_24h }}</strong><span>{{ summary.otp_failures_last_24h }} failures</span></div></div>
+  <div class="metric-item"><span class="metric-label">Emails sent</span><div class="metric-value-row"><strong>{{ summary.emails_sent_last_24h }}</strong><span>{{ summary.email_failures_last_24h }} failures</span></div></div>
+  <div class="metric-item"><span class="metric-label">API requests today</span><div class="metric-value-row"><strong>{{ summary.api_requests_today }}</strong><span>{{ summary.api_server_errors_today }} server errors</span></div></div>
+</section>
 
-<section class="panel">
-  <div class="panel-head"><div><h2>API usage</h2><p>Recent endpoint volume and error counts.</p></div></div>
-  <div class="table-wrap"><table><thead><tr><th>Date</th><th>Method</th><th>Route</th><th>Requests</th><th>4xx</th><th>5xx</th><th>Avg ms</th></tr></thead><tbody>
+<section class="data-panel">
+  <div class="panel-header"><div><p class="section-kicker">Traffic</p><h2>API usage</h2><p class="panel-description">Recent request volume, errors, and average response duration.</p></div></div>
+  <div class="table-scroll"><table class="data-table"><thead><tr><th>Date</th><th>Method</th><th>Route</th><th class="align-right">Requests</th><th class="align-right">4xx</th><th class="align-right">5xx</th><th class="align-right">Avg ms</th></tr></thead><tbody>
   {% for item in api_usage %}
-  <tr><td>{{ item.usage_date }}</td><td><span class="tag">{{ item.method }}</span></td><td class="mono">{{ item.route_path }}</td><td>{{ item.request_count }}</td><td>{{ item.client_error_count }}</td><td>{{ item.server_error_count }}</td><td>{{ ((item.total_duration_ms / item.request_count) if item.request_count else 0)|round(1) }}</td></tr>
-  {% else %}<tr><td colspan="7" class="empty">No API usage recorded.</td></tr>{% endfor %}
+  <tr><td class="muted-cell">{{ item.usage_date }}</td><td><span class="method-label method-{{ item.method|lower }}">{{ item.method }}</span></td><td class="mono route-cell">{{ item.route_path }}</td><td class="align-right">{{ item.request_count }}</td><td class="align-right {{ 'text-warning' if item.client_error_count else 'muted-cell' }}">{{ item.client_error_count }}</td><td class="align-right {{ 'text-danger' if item.server_error_count else 'muted-cell' }}">{{ item.server_error_count }}</td><td class="align-right muted-cell">{{ ((item.total_duration_ms / item.request_count) if item.request_count else 0)|round(1) }}</td></tr>
+  {% else %}<tr><td colspan="7"><div class="empty-state"><strong>No API usage yet</strong><span>Request metrics will appear here.</span></div></td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 
-<section class="panel">
-  <div class="panel-head"><div><h2>Audit log</h2><p>Latest security and administrative events.</p></div></div>
-  <div class="table-wrap"><table><thead><tr><th>Event</th><th>Actor</th><th>Target</th><th>Request</th><th>IP</th><th>Created</th></tr></thead><tbody>
-  {% for item in audits %}<tr><td>{{ item.event_type }}</td><td>{{ item.actor_user_id or 'system' }}</td><td>{{ item.entity_type or '—' }} {{ item.entity_id or '' }}</td><td class="mono">{{ item.request_method or '' }} {{ item.request_path or '' }}</td><td>{{ item.ip_address or '—' }}</td><td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="6" class="empty">No audit events.</td></tr>{% endfor %}
+<section class="data-panel">
+  <div class="panel-header"><div><p class="section-kicker">Events</p><h2>Audit log</h2><p class="panel-description">Latest administrative and application events recorded by PPIS.</p></div></div>
+  <div class="table-scroll"><table class="data-table"><thead><tr><th>Event</th><th>Actor</th><th>Target</th><th>Request</th><th>IP</th><th class="align-right">Created</th></tr></thead><tbody>
+  {% for item in audits %}
+  <tr><td><span class="event-name">{{ item.event_type|replace('_',' ') }}</span></td><td class="mono muted-cell">{{ item.actor_user_id or 'system' }}</td><td>{{ item.entity_type or '—' }}{% if item.entity_id %}<small class="block-meta">{{ item.entity_id }}</small>{% endif %}</td><td class="mono muted-cell">{{ item.request_method or '' }} {{ item.request_path or '' }}</td><td class="mono muted-cell">{{ item.ip_address or '—' }}</td><td class="align-right muted-cell">{{ item.created_at.strftime('%b %d, %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="6"><div class="empty-state"><strong>No audit events</strong><span>Recorded platform events will appear here.</span></div></td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endblock %}
