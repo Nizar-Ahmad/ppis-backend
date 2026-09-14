@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard · PPIS Admin{% endblock %}
+{% block heading %}Overview{% endblock %}
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card"><span>Total users</span><strong>{{ statistics.total_users }}</strong><small>{{ statistics.admin_users }} admins</small></div>
+  <div class="stat-card"><span>Active sessions</span><strong>{{ observability.active_sessions }}</strong><small>{{ observability.sessions_created_last_24h }} created in 24h</small></div>
+  <div class="stat-card"><span>API requests today</span><strong>{{ observability.api_requests_today }}</strong><small>{{ observability.api_server_errors_today }} server errors</small></div>
+  <div class="stat-card"><span>Feedback rating</span><strong>{{ feedback_stats.average_rating }}</strong><small>{{ feedback_stats.total_feedback }} responses</small></div>
+  <div class="stat-card"><span>Avg productivity</span><strong>{{ statistics.average_productivity_score }}</strong><small>{{ statistics.total_daily_scores }} score records</small></div>
+  <div class="stat-card"><span>Avg stress index</span><strong>{{ statistics.average_stress_index }}</strong><small>{{ statistics.total_insights }} insights</small></div>
+</div>
+
+<div class="panel-grid two">
+  <section class="panel">
+    <div class="panel-head"><div><h2>Recent users</h2><p>Newest registered accounts</p></div><a href="/admin/users">View all</a></div>
+    <div class="list">
+      {% for user in recent_users %}
+      <a class="list-row" href="/admin/users/{{ user.id }}"><div><strong>{{ user.full_name }}</strong><span>{{ user.email }}</span></div><span class="badge {{ user.role }}">{{ user.role }}</span></a>
+      {% else %}<div class="empty">No users yet.</div>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Recent feedback</h2><p>Latest user sentiment</p></div><a href="/admin/feedback">View all</a></div>
+    <div class="list">
+      {% for item in recent_feedback %}
+      <div class="list-row"><div><strong>{{ item.feedback_type|replace('_',' ')|title }}</strong><span>{{ item.comment or 'No comment' }}</span></div><span class="rating">★ {{ item.rating }}</span></div>
+      {% else %}<div class="empty">No feedback yet.</div>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>System activity</h2><p>Recent audit events</p></div><a href="/admin/observability">Observability</a></div>
+  <div class="table-wrap"><table><thead><tr><th>Event</th><th>Entity</th><th>Actor</th><th>Time</th></tr></thead><tbody>
+  {% for item in recent_audit %}<tr><td>{{ item.event_type }}</td><td>{{ item.entity_type or '—' }}</td><td>{{ item.actor_user_id or 'system' }}</td><td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="4">No audit events.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}
