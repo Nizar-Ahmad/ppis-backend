@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% block title %}Users · PPIS Admin{% endblock %}
+{% block heading %}Users{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head users-head"><div><h2>User management</h2><p>Search accounts and inspect PPIS activity.</p></div><span class="count-pill">{{ total }} users</span></div>
+  <div class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search by name or email" hx-get="/admin/users" hx-trigger="keyup changed delay:350ms, search" hx-target="#users-table" hx-include="[name='role']" hx-push-url="true">
+    <select name="role" hx-get="/admin/users" hx-trigger="change" hx-target="#users-table" hx-include="[name='q']" hx-push-url="true">
+      <option value="" {{ 'selected' if not role else '' }}>All roles</option>
+      <option value="user" {{ 'selected' if role == 'user' else '' }}>Users</option>
+      <option value="admin" {{ 'selected' if role == 'admin' else '' }}>Admins</option>
+    </select>
+  </div>
+  <div id="users-table">{% include "admin/partials/users_table.html" %}</div>
+</section>
+{% endblock %}
