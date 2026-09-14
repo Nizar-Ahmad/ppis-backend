@@ -3,24 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>PPIS Admin Login</title>
+  <meta name="color-scheme" content="light">
+  <title>PPIS Admin</title>
   <link rel="stylesheet" href="/static/admin/admin.css">
 </head>
 <body class="login-page">
-  <div class="login-card">
-    <div class="brand login-brand">
-      <div class="brand-mark">P</div>
-      <div><strong>PPIS</strong><span>Administration</span></div>
-    </div>
-    <h1>Welcome back</h1>
-    <p class="muted">Sign in with an administrator account.</p>
-    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-    <form method="post" action="/admin/login" class="form-stack">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label>Email<input type="email" name="email" autocomplete="username" required autofocus></label>
-      <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
-      <button class="btn primary" type="submit">Sign in</button>
-    </form>
-  </div>
+  <main class="login-shell">
+    <section class="login-intro">
+      <a href="/admin" class="brand-lockup login-lockup"><span class="brand-symbol">P</span><span class="brand-copy"><strong>PPIS</strong><small>Administration</small></span></a>
+      <div class="login-message">
+        <span class="environment-badge light">Production console</span>
+        <h1>Operate PPIS with clarity.</h1>
+        <p>Manage users, sessions, feedback, and platform health from one focused workspace.</p>
+      </div>
+      <div class="login-footnote"><span class="status-dot"></span><span>Secure administrative access</span></div>
+    </section>
+
+    <section class="login-form-pane">
+      <div class="login-form-wrap">
+        <div class="login-form-heading"><p class="eyebrow">Administrator access</p><h2>Sign in</h2><p>Use an account with the PPIS admin role.</p></div>
+        {% if error %}<div class="form-alert" role="alert">{{ error }}</div>{% endif %}
+        <form method="post" action="/admin/login" class="login-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label><span>Email address</span><input type="email" name="email" autocomplete="username" placeholder="admin@example.com" required autofocus></label>
+          <label><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+          <button class="login-button" type="submit">Continue</button>
+        </form>
+        <p class="login-help">Only authorized PPIS administrators can access this console.</p>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
