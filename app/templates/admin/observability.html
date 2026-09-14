@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}Observability · PPIS Admin{% endblock %}
+{% block heading %}Observability{% endblock %}
+{% block content %}
+<div class="stats-grid compact">
+  <div class="stat-card"><span>Active sessions</span><strong>{{ summary.active_sessions }}</strong></div>
+  <div class="stat-card"><span>OTP requests · 24h</span><strong>{{ summary.otp_requests_last_24h }}</strong><small>{{ summary.otp_failures_last_24h }} failures</small></div>
+  <div class="stat-card"><span>Emails sent · 24h</span><strong>{{ summary.emails_sent_last_24h }}</strong><small>{{ summary.email_failures_last_24h }} failures</small></div>
+  <div class="stat-card"><span>API requests today</span><strong>{{ summary.api_requests_today }}</strong><small>{{ summary.api_server_errors_today }} 5xx</small></div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>API usage</h2><p>Recent endpoint volume and error counts.</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Date</th><th>Method</th><th>Route</th><th>Requests</th><th>4xx</th><th>5xx</th><th>Avg ms</th></tr></thead><tbody>
+  {% for item in api_usage %}
+  <tr><td>{{ item.usage_date }}</td><td><span class="tag">{{ item.method }}</span></td><td class="mono">{{ item.route_path }}</td><td>{{ item.request_count }}</td><td>{{ item.client_error_count }}</td><td>{{ item.server_error_count }}</td><td>{{ ((item.total_duration_ms / item.request_count) if item.request_count else 0)|round(1) }}</td></tr>
+  {% else %}<tr><td colspan="7" class="empty">No API usage recorded.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>Audit log</h2><p>Latest security and administrative events.</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Event</th><th>Actor</th><th>Target</th><th>Request</th><th>IP</th><th>Created</th></tr></thead><tbody>
+  {% for item in audits %}<tr><td>{{ item.event_type }}</td><td>{{ item.actor_user_id or 'system' }}</td><td>{{ item.entity_type or '—' }} {{ item.entity_id or '' }}</td><td class="mono">{{ item.request_method or '' }} {{ item.request_path or '' }}</td><td>{{ item.ip_address or '—' }}</td><td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="6" class="empty">No audit events.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}
