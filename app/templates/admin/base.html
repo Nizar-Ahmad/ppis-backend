@@ -6,6 +6,9 @@
   <meta name="color-scheme" content="light">
   <title>{% block title %}PPIS Admin{% endblock %}</title>
   <link rel="stylesheet" href="/static/admin/admin.css">
+  <link rel="stylesheet" href="/static/admin/v2-shell.css">
+  <link rel="stylesheet" href="/static/admin/v2-components.css">
+  <link rel="stylesheet" href="/static/admin/v2-pages.css">
   <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script defer src="/static/admin/admin.js"></script>
@@ -13,97 +16,42 @@
 <body class="admin-body">
   <div class="app-shell">
     <div class="sidebar-backdrop" x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"></div>
-
     <aside class="app-sidebar" :class="sidebarOpen ? 'is-open' : ''">
       <div class="sidebar-header">
         <a href="/admin/dashboard" class="brand-lockup" aria-label="PPIS Admin home">
           <span class="brand-symbol" aria-hidden="true">P</span>
-          <span class="brand-copy">
-            <strong>PPIS</strong>
-            <small>Admin</small>
-          </span>
+          <span class="brand-copy"><strong>PPIS</strong><small>Admin</small></span>
         </a>
         <span class="environment-badge">Production</span>
       </div>
-
       <nav class="sidebar-nav" aria-label="Admin navigation">
         <div class="nav-group">
           <span class="nav-label">Workspace</span>
-          <a href="/admin/dashboard" class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z"/></svg>
-            <span>Overview</span>
-          </a>
-          <a href="/admin/users" class="nav-item {{ 'active' if active_page == 'users' else '' }}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Z"/></svg>
-            <span>Users</span>
-          </a>
-          <a href="/admin/sessions" class="nav-item {{ 'active' if active_page == 'sessions' else '' }}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4V5Zm6 13h4l1 2H9l1-2Z"/></svg>
-            <span>Sessions</span>
-          </a>
-          <a href="/admin/feedback" class="nav-item {{ 'active' if active_page == 'feedback' else '' }}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H8l-4 3V4Zm4 4v2h8V8H8Zm0 4v2h5v-2H8Z"/></svg>
-            <span>Feedback</span>
-          </a>
+          <a href="/admin/dashboard" class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z"/></svg><span>Overview</span></a>
+          <a href="/admin/users" class="nav-item {{ 'active' if active_page == 'users' else '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Z"/></svg><span>Users</span></a>
+          <a href="/admin/sessions" class="nav-item {{ 'active' if active_page == 'sessions' else '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4V5Zm6 13h4l1 2H9l1-2Z"/></svg><span>Sessions</span></a>
+          <a href="/admin/feedback" class="nav-item {{ 'active' if active_page == 'feedback' else '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H8l-4 3V4Zm4 4v2h8V8H8Zm0 4v2h5v-2H8Z"/></svg><span>Feedback</span></a>
         </div>
-
         <div class="nav-group">
           <span class="nav-label">System</span>
-          <a href="/admin/observability" class="nav-item {{ 'active' if active_page == 'observability' else '' }}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h3V9H3v8Zm5 0h3V4H8v13Zm5 0h3v-6h-3v6Zm5 0h3V7h-3v10ZM3 20h18v-1H3v1Z"/></svg>
-            <span>Observability</span>
-          </a>
+          <a href="/admin/observability" class="nav-item {{ 'active' if active_page == 'observability' else '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h3V9H3v8Zm5 0h3V4H8v13Zm5 0h3v-6h-3v6Zm5 0h3V7h-3v10ZM3 20h18v-1H3v1Z"/></svg><span>Observability</span></a>
         </div>
       </nav>
-
-      <div class="sidebar-footer">
-        <div class="sidebar-footnote">
-          <span class="status-dot"></span>
-          <div>
-            <strong>PPIS Backend</strong>
-            <small>Production console</small>
-          </div>
-        </div>
-      </div>
+      <div class="sidebar-footer"><div class="sidebar-footnote"><span class="status-dot"></span><div><strong>PPIS Backend</strong><small>Production console</small></div></div></div>
     </aside>
-
     <main class="app-main">
       <header class="app-topbar">
-        <button class="icon-button mobile-menu" type="button" @click="sidebarOpen = !sidebarOpen" aria-label="Open navigation">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v2H4V7Zm0 4h16v2H4v-2Zm0 4h16v2H4v-2Z"/></svg>
-        </button>
-
-        <div class="page-heading">
-          <p class="eyebrow">PPIS / Admin</p>
-          <h1>{% block heading %}Overview{% endblock %}</h1>
-          <p class="page-description">{% block subheading %}Production administration and system monitoring{% endblock %}</p>
-        </div>
-
+        <button class="icon-button mobile-menu" type="button" @click="sidebarOpen = !sidebarOpen" aria-label="Open navigation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v2H4V7Zm0 4h16v2H4v-2Zm0 4h16v2H4v-2Z"/></svg></button>
+        <div class="page-heading"><p class="eyebrow">PPIS / Admin</p><h1>{% block heading %}Overview{% endblock %}</h1><p class="page-description">{% block subheading %}Production administration and system monitoring{% endblock %}</p></div>
         <div class="topbar-actions">
           <a class="docs-link" href="/docs" target="_blank" rel="noopener">API docs</a>
           <div class="account-menu-wrap" x-data="{ open: false }">
-            <button class="account-trigger" type="button" @click="open = !open" :aria-expanded="open">
-              <span class="account-avatar">{{ admin.full_name[:1]|upper }}</span>
-              <span class="account-name">{{ admin.full_name }}</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5H7Z"/></svg>
-            </button>
-            <div class="account-popover" x-show="open" x-cloak @click.outside="open = false" x-transition.origin.top.right>
-              <div class="account-meta">
-                <strong>{{ admin.full_name }}</strong>
-                <span>{{ admin.email }}</span>
-              </div>
-              <form method="post" action="/admin/logout">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button class="menu-action" type="submit">Sign out</button>
-              </form>
-            </div>
+            <button class="account-trigger" type="button" @click="open = !open" :aria-expanded="open"><span class="account-avatar">{{ admin.full_name[:1]|upper }}</span><span class="account-name">{{ admin.full_name }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5H7Z"/></svg></button>
+            <div class="account-popover" x-show="open" x-cloak @click.outside="open = false" x-transition.origin.top.right><div class="account-meta"><strong>{{ admin.full_name }}</strong><span>{{ admin.email }}</span></div><form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="menu-action" type="submit">Sign out</button></form></div>
           </div>
         </div>
       </header>
-
-      <section class="page-content">
-        {% block content %}{% endblock %}
-      </section>
+      <section class="page-content">{% block content %}{% endblock %}</section>
     </main>
   </div>
 </body>
