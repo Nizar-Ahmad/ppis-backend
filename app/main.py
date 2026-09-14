@@ -5,6 +5,7 @@ from fastapi import (
     FastAPI,
     Request,
 )
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from starlette.concurrency import (
     run_in_threadpool,
@@ -31,6 +32,7 @@ from app.routers import (
     admin_feedback,
     admin_observability,
     admin_sessions,
+    admin_web,
     analytics,
     auth,
     calendar,
@@ -100,6 +102,12 @@ seed_roles()
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory="app/static"),
+    name="static",
 )
 
 
@@ -230,4 +238,8 @@ app.include_router(
 
 app.include_router(
     admin_observability.router
+)
+
+app.include_router(
+    admin_web.router
 )
