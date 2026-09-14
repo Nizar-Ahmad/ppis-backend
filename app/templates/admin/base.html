@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" x-data="{ sidebarOpen: false }">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}PPIS Admin{% endblock %}</title>
+  <link rel="stylesheet" href="/static/admin/admin.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar" :class="sidebarOpen ? 'open' : ''">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div><strong>PPIS</strong><span>Admin Console</span></div>
+      </div>
+      <nav>
+        <a href="/admin/dashboard" class="{{ 'active' if active_page == 'dashboard' else '' }}">Overview</a>
+        <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
+        <a href="/admin/sessions" class="{{ 'active' if active_page == 'sessions' else '' }}">Sessions</a>
+        <a href="/admin/feedback" class="{{ 'active' if active_page == 'feedback' else '' }}">Feedback</a>
+        <a href="/admin/observability" class="{{ 'active' if active_page == 'observability' else '' }}">Observability</a>
+      </nav>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" @click="sidebarOpen = !sidebarOpen">☰</button>
+        <div>
+          <h1>{% block heading %}PPIS Admin{% endblock %}</h1>
+          <p class="muted">Production administration and system monitoring</p>
+        </div>
+        <div class="account" x-data="{ open: false }">
+          <button @click="open = !open">{{ admin.full_name }} ▾</button>
+          <div x-show="open" @click.outside="open = false" class="account-menu">
+            <span>{{ admin.email }}</span>
+            <form method="post" action="/admin/logout">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit">Sign out</button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      <section class="content">
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>
