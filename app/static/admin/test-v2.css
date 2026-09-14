@@ -1,0 +1,1 @@
+:root{--bg:#f6f7f4;--surface:#fff;--sidebar:#171a18;--text:#171a18;--muted:#6f7671;--border:#e1e5e1;--accent:#c7e62a}body{background:var(--bg);color:var(--text)}.app-sidebar{background:var(--sidebar)}
