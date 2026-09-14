@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ user.full_name }} · PPIS Admin{% endblock %}
+{% block heading %}User details{% endblock %}
+{% block content %}
+<div class="detail-header panel">
+  <div>
+    <a class="back-link" href="/admin/users">← Back to users</a>
+    <h2>{{ user.full_name }}</h2>
+    <p>{{ user.email }}</p>
+  </div>
+  <span class="badge {{ user.role }}">{{ user.role }}</span>
+</div>
+
+<div class="panel-grid two">
+  <section class="panel">
+    <div class="panel-head"><div><h2>Account</h2><p>Identity and access</p></div></div>
+    <dl class="detail-list">
+      <div><dt>User ID</dt><dd>{{ user.id }}</dd></div>
+      <div><dt>Created</dt><dd>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt>Password</dt><dd>{{ 'Configured' if user.has_password else 'Not configured' }}</dd></div>
+      <div><dt>Google</dt><dd>{{ 'Connected' if user.google_connected else 'Not connected' }}</dd></div>
+    </dl>
+    <form method="post" action="/admin/users/{{ user.id }}/role" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Role
+        <select name="role">
+          <option value="user" {{ 'selected' if user.role == 'user' else '' }}>User</option>
+          <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
+        </select>
+      </label>
+      <button class="btn" type="submit">Update role</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Recent scores</h2><p>Latest productivity and stress values</p></div></div>
+    <div class="mini-score-grid">
+      {% for score in scores[:6] %}
+      <div><span>{{ score.entry_date }}</span><strong>{{ score.productivity_score }}</strong><small>Stress {{ score.stress_index }}</small></div>
+      {% else %}<div class="empty">No score history.</div>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>Sessions</h2><p>Most recent devices and authentication sessions</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Device</th><th>Client</th><th>IP</th><th>Last seen</th><th>Status</th></tr></thead><tbody>
+  {% for item in sessions %}<tr><td>{{ item.device_name or 'Unknown device' }}</td><td>{{ item.client_type }}</td><td>{{ item.ip_address or '—' }}</td><td>{{ item.last_seen_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{% if item.revoked_at %}<span class="badge danger">Revoked</span>{% else %}<span class="badge success">Active</span>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="empty">No sessions.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}
