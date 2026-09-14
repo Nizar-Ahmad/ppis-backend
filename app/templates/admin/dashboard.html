@@ -1,40 +1,48 @@
 {% extends "admin/base.html" %}
-{% block title %}Dashboard · PPIS Admin{% endblock %}
+{% block title %}Overview · PPIS Admin{% endblock %}
 {% block heading %}Overview{% endblock %}
+{% block subheading %}A concise view of platform activity, user growth, and system health.{% endblock %}
 {% block content %}
-<div class="stats-grid">
-  <div class="stat-card"><span>Total users</span><strong>{{ statistics.total_users }}</strong><small>{{ statistics.admin_users }} admins</small></div>
-  <div class="stat-card"><span>Active sessions</span><strong>{{ observability.active_sessions }}</strong><small>{{ observability.sessions_created_last_24h }} created in 24h</small></div>
-  <div class="stat-card"><span>API requests today</span><strong>{{ observability.api_requests_today }}</strong><small>{{ observability.api_server_errors_today }} server errors</small></div>
-  <div class="stat-card"><span>Feedback rating</span><strong>{{ feedback_stats.average_rating }}</strong><small>{{ feedback_stats.total_feedback }} responses</small></div>
-  <div class="stat-card"><span>Avg productivity</span><strong>{{ statistics.average_productivity_score }}</strong><small>{{ statistics.total_daily_scores }} score records</small></div>
-  <div class="stat-card"><span>Avg stress index</span><strong>{{ statistics.average_stress_index }}</strong><small>{{ statistics.total_insights }} insights</small></div>
-</div>
+<section class="metric-strip">
+  <div class="metric-item"><span class="metric-label">Total users</span><div class="metric-value-row"><strong>{{ statistics.total_users }}</strong><span>{{ statistics.admin_users }} admins</span></div></div>
+  <div class="metric-item"><span class="metric-label">Active sessions</span><div class="metric-value-row"><strong>{{ observability.active_sessions }}</strong><span>{{ observability.sessions_created_last_24h }} new / 24h</span></div></div>
+  <div class="metric-item"><span class="metric-label">API requests today</span><div class="metric-value-row"><strong>{{ observability.api_requests_today }}</strong><span>{{ observability.api_server_errors_today }} server errors</span></div></div>
+</section>
 
-<div class="panel-grid two">
-  <section class="panel">
-    <div class="panel-head"><div><h2>Recent users</h2><p>Newest registered accounts</p></div><a href="/admin/users">View all</a></div>
-    <div class="list">
+<section class="section-block">
+  <div class="section-heading"><div><p class="section-kicker">Signals</p><h2>Product and system pulse</h2></div></div>
+  <div class="signal-grid">
+    <article class="signal-card"><span class="signal-icon accent">↗</span><div><span class="metric-label">Average productivity</span><strong>{{ statistics.average_productivity_score }}</strong><small>{{ statistics.total_daily_scores }} score records</small></div></article>
+    <article class="signal-card"><span class="signal-icon">◌</span><div><span class="metric-label">Average stress</span><strong>{{ statistics.average_stress_index }}</strong><small>{{ statistics.total_insights }} generated insights</small></div></article>
+    <article class="signal-card"><span class="signal-icon">★</span><div><span class="metric-label">Feedback rating</span><strong>{{ feedback_stats.average_rating }}</strong><small>{{ feedback_stats.total_feedback }} responses</small></div></article>
+    <article class="signal-card"><span class="signal-icon {{ 'danger' if observability.api_server_errors_today else 'success' }}">●</span><div><span class="metric-label">API status</span><strong>{{ 'Needs attention' if observability.api_server_errors_today else 'Healthy' }}</strong><small>{{ observability.api_client_errors_today }} client errors today</small></div></article>
+  </div>
+</section>
+
+<div class="content-grid two-one">
+  <section class="data-panel">
+    <div class="panel-header"><div><p class="section-kicker">Accounts</p><h2>Recent users</h2></div><a class="text-link" href="/admin/users">View all <span>→</span></a></div>
+    <div class="entity-list">
       {% for user in recent_users %}
-      <a class="list-row" href="/admin/users/{{ user.id }}"><div><strong>{{ user.full_name }}</strong><span>{{ user.email }}</span></div><span class="badge {{ user.role }}">{{ user.role }}</span></a>
-      {% else %}<div class="empty">No users yet.</div>{% endfor %}
+      <a class="entity-row" href="/admin/users/{{ user.id }}"><span class="avatar-sm">{{ user.full_name[:1]|upper }}</span><span class="entity-main"><strong>{{ user.full_name }}</strong><small>{{ user.email }}</small></span><span class="role-label {{ user.role }}">{{ user.role }}</span><span class="row-arrow">→</span></a>
+      {% else %}<div class="empty-state"><strong>No users yet</strong><span>New accounts will appear here.</span></div>{% endfor %}
     </div>
   </section>
 
-  <section class="panel">
-    <div class="panel-head"><div><h2>Recent feedback</h2><p>Latest user sentiment</p></div><a href="/admin/feedback">View all</a></div>
-    <div class="list">
+  <section class="data-panel">
+    <div class="panel-header"><div><p class="section-kicker">Sentiment</p><h2>Recent feedback</h2></div><a class="text-link" href="/admin/feedback">View all <span>→</span></a></div>
+    <div class="feedback-list">
       {% for item in recent_feedback %}
-      <div class="list-row"><div><strong>{{ item.feedback_type|replace('_',' ')|title }}</strong><span>{{ item.comment or 'No comment' }}</span></div><span class="rating">★ {{ item.rating }}</span></div>
-      {% else %}<div class="empty">No feedback yet.</div>{% endfor %}
+      <div class="feedback-row"><div class="feedback-rating">{{ item.rating }}<span>/5</span></div><div><strong>{{ item.feedback_type|replace('_',' ')|title }}</strong><p>{{ item.comment or 'No written comment' }}</p></div></div>
+      {% else %}<div class="empty-state"><strong>No feedback yet</strong><span>User responses will appear here.</span></div>{% endfor %}
     </div>
   </section>
 </div>
 
-<section class="panel">
-  <div class="panel-head"><div><h2>System activity</h2><p>Recent audit events</p></div><a href="/admin/observability">Observability</a></div>
-  <div class="table-wrap"><table><thead><tr><th>Event</th><th>Entity</th><th>Actor</th><th>Time</th></tr></thead><tbody>
-  {% for item in recent_audit %}<tr><td>{{ item.event_type }}</td><td>{{ item.entity_type or '—' }}</td><td>{{ item.actor_user_id or 'system' }}</td><td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="4">No audit events.</td></tr>{% endfor %}
+<section class="data-panel">
+  <div class="panel-header"><div><p class="section-kicker">Operations</p><h2>Recent system activity</h2></div><a class="text-link" href="/admin/observability">Open observability <span>→</span></a></div>
+  <div class="table-scroll"><table class="data-table"><thead><tr><th>Event</th><th>Entity</th><th>Actor</th><th class="align-right">Time</th></tr></thead><tbody>
+  {% for item in recent_audit %}<tr><td><span class="event-name">{{ item.event_type|replace('_',' ') }}</span></td><td>{{ item.entity_type or '—' }}</td><td class="mono muted-cell">{{ item.actor_user_id or 'system' }}</td><td class="align-right muted-cell">{{ item.created_at.strftime('%b %d, %H:%M') }}</td></tr>{% else %}<tr><td colspan="4"><div class="empty-state compact"><strong>No recent events</strong></div></td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endblock %}
