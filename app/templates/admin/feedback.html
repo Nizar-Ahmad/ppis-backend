@@ -1,19 +1,37 @@
 {% extends "admin/base.html" %}
 {% block title %}Feedback · PPIS Admin{% endblock %}
 {% block heading %}Feedback{% endblock %}
+{% block subheading %}Review user sentiment across the app, reports, and generated insights.{% endblock %}
 {% block content %}
-<div class="stats-grid compact">
-  <div class="stat-card"><span>Total feedback</span><strong>{{ stats.total_feedback }}</strong></div>
-  <div class="stat-card"><span>Average rating</span><strong>{{ stats.average_rating }}</strong></div>
-  <div class="stat-card"><span>App</span><strong>{{ stats.app_feedback_count }}</strong></div>
-  <div class="stat-card"><span>Weekly reports</span><strong>{{ stats.weekly_report_feedback_count }}</strong></div>
-</div>
-<section class="panel">
-  <div class="panel-head"><div><h2>User feedback</h2><p>Ratings and comments collected by PPIS.</p></div>
-    <form method="get"><select name="feedback_type" onchange="this.form.submit()"><option value="">All types</option><option value="app" {{ 'selected' if feedback_type == 'app' else '' }}>App</option><option value="weekly_report" {{ 'selected' if feedback_type == 'weekly_report' else '' }}>Weekly report</option><option value="monthly_report" {{ 'selected' if feedback_type == 'monthly_report' else '' }}>Monthly report</option><option value="insight" {{ 'selected' if feedback_type == 'insight' else '' }}>Insight</option></select></form>
+<section class="metric-strip metric-strip-four">
+  <div class="metric-item"><span class="metric-label">Total feedback</span><div class="metric-value-row"><strong>{{ stats.total_feedback }}</strong><span>responses</span></div></div>
+  <div class="metric-item"><span class="metric-label">Average rating</span><div class="metric-value-row"><strong>{{ stats.average_rating }}</strong><span>out of 5</span></div></div>
+  <div class="metric-item"><span class="metric-label">App feedback</span><div class="metric-value-row"><strong>{{ stats.app_feedback_count }}</strong><span>items</span></div></div>
+  <div class="metric-item"><span class="metric-label">Weekly reports</span><div class="metric-value-row"><strong>{{ stats.weekly_report_feedback_count }}</strong><span>items</span></div></div>
+</section>
+
+<section class="data-panel">
+  <div class="panel-header">
+    <div><p class="section-kicker">User sentiment</p><h2>Feedback stream</h2><p class="panel-description">Ratings and written responses collected by PPIS.</p></div>
+    <form method="get"><select class="filter-select" name="feedback_type" onchange="this.form.submit()"><option value="">All types</option><option value="app" {{ 'selected' if feedback_type == 'app' else '' }}>App</option><option value="weekly_report" {{ 'selected' if feedback_type == 'weekly_report' else '' }}>Weekly report</option><option value="monthly_report" {{ 'selected' if feedback_type == 'monthly_report' else '' }}>Monthly report</option><option value="insight" {{ 'selected' if feedback_type == 'insight' else '' }}>Insight</option></select></form>
   </div>
-  <div class="table-wrap"><table><thead><tr><th>Type</th><th>Rating</th><th>Comment</th><th>User</th><th>Created</th></tr></thead><tbody>
-  {% for item in feedback %}<tr><td><span class="tag">{{ item.feedback_type|replace('_',' ')|title }}</span></td><td><span class="rating">★ {{ item.rating }}</span></td><td class="comment-cell">{{ item.comment or '—' }}</td><td><a href="/admin/users/{{ item.user_id }}">{{ item.user_id }}</a></td><td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No feedback found.</td></tr>{% endfor %}
-  </tbody></table></div>
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>Type</th><th>Rating</th><th>Comment</th><th>User</th><th class="align-right">Created</th></tr></thead>
+      <tbody>
+      {% for item in feedback %}
+        <tr>
+          <td><span class="subtle-tag">{{ item.feedback_type|replace('_',' ')|title }}</span></td>
+          <td><span class="rating-value">{{ item.rating }}<small>/5</small></span></td>
+          <td class="comment-cell">{{ item.comment or 'No written comment' }}</td>
+          <td><a class="mono-link" href="/admin/users/{{ item.user_id }}">{{ item.user_id }}</a></td>
+          <td class="align-right muted-cell">{{ item.created_at.strftime('%b %d, %Y · %H:%M') }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5"><div class="empty-state"><strong>No feedback found</strong><span>Responses matching this filter will appear here.</span></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}
