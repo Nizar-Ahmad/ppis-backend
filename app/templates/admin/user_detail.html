@@ -4,46 +4,10 @@
 {% block subheading %}Review account identity, authentication state, productivity signals, and recent sessions.{% endblock %}
 {% block content %}
 <a class="back-link" href="/admin/users">← Back to users</a>
-
-<section class="profile-hero">
-  <div class="profile-avatar">{{ user.full_name[:1]|upper }}</div>
-  <div class="profile-copy">
-    <div class="profile-title-row"><h2>{{ user.full_name }}</h2><span class="role-label {{ user.role }}">{{ user.role }}</span></div>
-    <p>{{ user.email }}</p>
-    <div class="profile-meta"><span>Joined {{ user.created_at.strftime('%b %d, %Y') }}</span><span>{{ 'Google connected' if user.google_connected else 'Google not connected' }}</span><span>{{ 'Password configured' if user.has_password else 'No password' }}</span></div>
-  </div>
-</section>
-
+<section class="profile-hero"><div class="profile-avatar">{{ user.full_name[:1]|upper }}</div><div class="profile-copy"><div class="profile-title-row"><h2>{{ user.full_name }}</h2><span class="role-label {{ user.role }}">{{ user.role }}</span></div><p>{{ user.email }}</p><div class="profile-meta"><span>Joined {{ user.created_at.strftime('%b %d, %Y') }}</span><span>{{ 'Google connected' if user.google_connected else 'Google not connected' }}</span><span>{{ 'Password configured' if user.has_password else 'No password' }}</span></div></div></section>
 <div class="content-grid two-one">
-  <section class="data-panel">
-    <div class="panel-header"><div><p class="section-kicker">Account</p><h2>Identity & access</h2></div></div>
-    <dl class="detail-grid">
-      <div><dt>User ID</dt><dd class="mono">{{ user.id }}</dd></div>
-      <div><dt>Created</dt><dd>{{ user.created_at.strftime('%b %d, %Y · %H:%M') }}</dd></div>
-      <div><dt>Password</dt><dd>{{ 'Configured' if user.has_password else 'Not configured' }}</dd></div>
-      <div><dt>Google account</dt><dd>{{ 'Connected' if user.google_connected else 'Not connected' }}</dd></div>
-    </dl>
-    <form method="post" action="/admin/users/{{ user.id }}/role" class="inline-settings-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <div><label for="role">Role</label><p>Controls access to administrative functionality.</p></div>
-      <div class="inline-form-controls"><select id="role" class="filter-select" name="role"><option value="user" {{ 'selected' if user.role == 'user' else '' }}>User</option><option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option></select><button class="primary-button" type="submit">Save role</button></div>
-    </form>
-  </section>
-
-  <section class="data-panel">
-    <div class="panel-header"><div><p class="section-kicker">Analytics</p><h2>Recent scores</h2></div></div>
-    <div class="score-list">
-      {% for score in scores[:6] %}
-      <div class="score-row"><span class="score-date">{{ score.entry_date.strftime('%b %d') if score.entry_date.strftime else score.entry_date }}</span><div><span>Productivity</span><strong>{{ score.productivity_score }}</strong></div><div><span>Stress</span><strong>{{ score.stress_index }}</strong></div></div>
-      {% else %}<div class="empty-state"><strong>No score history</strong><span>Analytics will appear once daily scores are generated.</span></div>{% endfor %}
-    </div>
-  </section>
+  <section class="data-panel"><div class="panel-header"><div><p class="section-kicker">Account</p><h2>Identity & access</h2></div></div><dl class="detail-grid"><div><dt>User ID</dt><dd class="mono">{{ user.id }}</dd></div><div><dt>Created</dt><dd>{{ user.created_at.strftime('%b %d, %Y · %H:%M') }}</dd></div><div><dt>Password</dt><dd>{{ 'Configured' if user.has_password else 'Not configured' }}</dd></div><div><dt>Google account</dt><dd>{{ 'Connected' if user.google_connected else 'Not connected' }}</dd></div></dl><form method="post" action="/admin/users/{{ user.id }}/role" class="inline-settings-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div><label for="role">Role</label><p>Controls access to administrative functionality.</p></div><div class="inline-form-controls"><select id="role" class="filter-select" name="role"><option value="user" {{ 'selected' if user.role == 'user' else '' }}>User</option><option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option></select><button class="primary-button" type="submit">Save role</button></div></form></section>
+  <section class="data-panel"><div class="panel-header"><div><p class="section-kicker">Analytics</p><h2>Recent scores</h2></div></div><div class="score-list">{% for score in scores[:6] %}<div class="score-row"><span class="score-date">{{ score.entry_date.strftime('%b %d') }}</span><div><span>Productivity</span><strong>{{ score.productivity_score }}</strong></div><div><span>Stress</span><strong>{{ score.stress_index }}</strong></div></div>{% else %}<div class="empty-state"><strong>No score history</strong><span>Analytics will appear once daily scores are generated.</span></div>{% endfor %}</div></section>
 </div>
-
-<section class="data-panel">
-  <div class="panel-header"><div><p class="section-kicker">Access</p><h2>Recent sessions</h2><p class="panel-description">Latest devices and authenticated application sessions.</p></div></div>
-  <div class="table-scroll"><table class="data-table"><thead><tr><th>Device</th><th>Client</th><th>IP address</th><th>Last seen</th><th>Status</th></tr></thead><tbody>
-  {% for item in sessions %}<tr><td><strong class="cell-title">{{ item.device_name or item.device_id or 'Unknown device' }}</strong></td><td><span class="subtle-tag">{{ item.client_type or 'unknown' }}</span></td><td class="mono muted-cell">{{ item.ip_address or '—' }}</td><td class="muted-cell">{{ item.last_seen_at.strftime('%b %d, %Y · %H:%M') }}</td><td>{% if item.revoked_at %}<span class="status-label danger"><i></i>Revoked</span>{% else %}<span class="status-label success"><i></i>Active</span>{% endif %}</td></tr>{% else %}<tr><td colspan="5"><div class="empty-state"><strong>No sessions</strong><span>This user has no recorded sessions.</span></div></td></tr>{% endfor %}
-  </tbody></table></div>
-</section>
+<section class="data-panel"><div class="panel-header"><div><p class="section-kicker">Access</p><h2>Recent sessions</h2><p class="panel-description">Latest devices and authenticated application sessions.</p></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Device</th><th>Client</th><th>IP address</th><th>Last seen</th><th>Status</th></tr></thead><tbody>{% for item in sessions %}<tr><td><strong class="cell-title">{{ item.device_name or item.device_id or 'Unknown device' }}</strong></td><td><span class="subtle-tag">{{ item.client_type or 'unknown' }}</span></td><td class="mono muted-cell">{{ item.ip_address or '—' }}</td><td class="muted-cell">{{ item.last_seen_at.strftime('%b %d, %Y · %H:%M') }}</td><td>{% if item.revoked_at %}<span class="status-label danger"><i></i>Revoked</span>{% else %}<span class="status-label success"><i></i>Active</span>{% endif %}</td></tr>{% else %}<tr><td colspan="5"><div class="empty-state"><strong>No sessions</strong><span>This user has no recorded sessions.</span></div></td></tr>{% endfor %}</tbody></table></div></section>
 {% endblock %}
