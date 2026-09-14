@@ -1,23 +1,34 @@
 {% extends "admin/base.html" %}
 {% block title %}Sessions · PPIS Admin{% endblock %}
 {% block heading %}Sessions{% endblock %}
+{% block subheading %}Inspect authenticated devices and revoke access when necessary.{% endblock %}
 {% block content %}
-<section class="panel">
-  <div class="panel-head"><div><h2>Authentication sessions</h2><p>Inspect devices and revoke access when necessary.</p></div>
-    <div class="segmented"><a class="{{ 'active' if active_only else '' }}" href="/admin/sessions?active_only=true">Active</a><a class="{{ 'active' if not active_only else '' }}" href="/admin/sessions?active_only=false">All</a></div>
+<section class="data-panel">
+  <div class="panel-header">
+    <div><p class="section-kicker">Authentication</p><h2>Device sessions</h2><p class="panel-description">Most recent application sessions and device metadata.</p></div>
+    <div class="segmented-control"><a class="{{ 'active' if active_only else '' }}" href="/admin/sessions?active_only=true">Active</a><a class="{{ 'active' if not active_only else '' }}" href="/admin/sessions?active_only=false">All</a></div>
   </div>
-  <div class="table-wrap"><table><thead><tr><th>User</th><th>Device</th><th>Client</th><th>IP</th><th>Last seen</th><th>Status</th><th></th></tr></thead><tbody>
-  {% for item in sessions %}
-  <tr>
-    <td>{% set owner = users.get(item.user_id) %}<div class="user-cell"><strong>{{ owner.full_name if owner else 'Unknown user' }}</strong><span>{{ owner.email if owner else item.user_id }}</span></div></td>
-    <td>{{ item.device_name or item.device_id or 'Unknown' }}</td>
-    <td><span class="tag">{{ item.client_type }}</span></td>
-    <td>{{ item.ip_address or '—' }}</td>
-    <td>{{ item.last_seen_at.strftime('%Y-%m-%d %H:%M') }}</td>
-    <td>{% if item.revoked_at %}<span class="badge danger">Revoked</span>{% else %}<span class="badge success">Active</span>{% endif %}</td>
-    <td>{% if not item.revoked_at %}<form method="post" action="/admin/sessions/{{ item.id }}/revoke" onsubmit="return confirm('Revoke this session?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn small danger-outline" type="submit">Revoke</button></form>{% endif %}</td>
-  </tr>
-  {% else %}<tr><td colspan="7" class="empty">No sessions found.</td></tr>{% endfor %}
-  </tbody></table></div>
+
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Device</th><th>Client</th><th>IP address</th><th>Last seen</th><th>Status</th><th class="align-right">Action</th></tr></thead>
+      <tbody>
+      {% for item in sessions %}
+        {% set owner = users.get(item.user_id) %}
+        <tr>
+          <td><div class="user-identity static"><span class="avatar-sm">{{ (owner.full_name[:1] if owner else '?')|upper }}</span><span><strong>{{ owner.full_name if owner else 'Unknown user' }}</strong><small>{{ owner.email if owner else item.user_id }}</small></span></div></td>
+          <td><strong class="cell-title">{{ item.device_name or item.device_id or 'Unknown device' }}</strong></td>
+          <td><span class="subtle-tag">{{ item.client_type or 'unknown' }}</span></td>
+          <td class="mono muted-cell">{{ item.ip_address or '—' }}</td>
+          <td class="muted-cell">{{ item.last_seen_at.strftime('%b %d, %H:%M') }}</td>
+          <td>{% if item.revoked_at %}<span class="status-label danger"><i></i>Revoked</span>{% else %}<span class="status-label success"><i></i>Active</span>{% endif %}</td>
+          <td class="align-right">{% if not item.revoked_at %}<form method="post" action="/admin/sessions/{{ item.id }}/revoke" onsubmit="return confirm('Revoke this session? The device will need to sign in again.')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger-action" type="submit">Revoke</button></form>{% else %}<span class="muted-cell">—</span>{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7"><div class="empty-state"><strong>No sessions found</strong><span>There are no sessions matching this view.</span></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}
