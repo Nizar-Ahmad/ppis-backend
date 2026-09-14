@@ -1,0 +1,23 @@
+<div class="table-wrap">
+<table>
+  <thead><tr><th>User</th><th>Role</th><th>Auth</th><th>Created</th><th></th></tr></thead>
+  <tbody>
+  {% for user in users %}
+    <tr>
+      <td><div class="user-cell"><strong>{{ user.full_name }}</strong><span>{{ user.email }}</span></div></td>
+      <td><span class="badge {{ user.role }}">{{ user.role }}</span></td>
+      <td>{% if user.google_connected %}<span class="tag">Google</span>{% endif %}{% if user.has_password %}<span class="tag">Password</span>{% endif %}</td>
+      <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+      <td class="actions"><a class="btn small" href="/admin/users/{{ user.id }}">Open</a></td>
+    </tr>
+  {% else %}<tr><td colspan="5" class="empty">No users match these filters.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% if pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}<a hx-get="/admin/users?page={{ page-1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Previous</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a hx-get="/admin/users?page={{ page+1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Next</a>{% endif %}
+</div>
+{% endif %}
