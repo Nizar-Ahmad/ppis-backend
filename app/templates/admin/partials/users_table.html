@@ -1,23 +1,33 @@
-<div class="table-wrap">
-<table>
-  <thead><tr><th>User</th><th>Role</th><th>Auth</th><th>Created</th><th></th></tr></thead>
-  <tbody>
-  {% for user in users %}
-    <tr>
-      <td><div class="user-cell"><strong>{{ user.full_name }}</strong><span>{{ user.email }}</span></div></td>
-      <td><span class="badge {{ user.role }}">{{ user.role }}</span></td>
-      <td>{% if user.google_connected %}<span class="tag">Google</span>{% endif %}{% if user.has_password %}<span class="tag">Password</span>{% endif %}</td>
-      <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-      <td class="actions"><a class="btn small" href="/admin/users/{{ user.id }}">Open</a></td>
-    </tr>
-  {% else %}<tr><td colspan="5" class="empty">No users match these filters.</td></tr>{% endfor %}
-  </tbody>
-</table>
+<div class="table-scroll">
+  <table class="data-table users-table">
+    <thead><tr><th>User</th><th>Authentication</th><th>Role</th><th>Created</th><th class="align-right">Action</th></tr></thead>
+    <tbody>
+    {% for user in users %}
+      <tr>
+        <td>
+          <a class="user-identity" href="/admin/users/{{ user.id }}">
+            <span class="avatar-sm">{{ user.full_name[:1]|upper }}</span>
+            <span><strong>{{ user.full_name }}</strong><small>{{ user.email }}</small></span>
+          </a>
+        </td>
+        <td><div class="auth-methods">{% if user.google_connected %}<span>Google</span>{% endif %}{% if user.has_password %}<span>Password</span>{% endif %}{% if not user.google_connected and not user.has_password %}<span class="muted-cell">—</span>{% endif %}</div></td>
+        <td><span class="role-label {{ user.role }}">{{ user.role }}</span></td>
+        <td class="muted-cell">{{ user.created_at.strftime('%b %d, %Y') }}</td>
+        <td class="align-right"><a class="row-action" href="/admin/users/{{ user.id }}">Open <span>→</span></a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5"><div class="empty-state"><strong>No matching users</strong><span>Try a different search or role filter.</span></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% if pages > 1 %}
-<div class="pagination">
-  {% if page > 1 %}<a hx-get="/admin/users?page={{ page-1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Previous</a>{% endif %}
-  <span>Page {{ page }} of {{ pages }}</span>
-  {% if page < pages %}<a hx-get="/admin/users?page={{ page+1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Next</a>{% endif %}
+<div class="pagination-bar">
+  <span>{{ total }} users</span>
+  <div>
+    {% if page > 1 %}<a class="page-button" hx-get="/admin/users?page={{ page-1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Previous</a>{% endif %}
+    <span class="page-status">{{ page }} / {{ pages }}</span>
+    {% if page < pages %}<a class="page-button" hx-get="/admin/users?page={{ page+1 }}&q={{ q }}&role={{ role }}" hx-target="#users-table" hx-push-url="true">Next</a>{% endif %}
+  </div>
 </div>
 {% endif %}
